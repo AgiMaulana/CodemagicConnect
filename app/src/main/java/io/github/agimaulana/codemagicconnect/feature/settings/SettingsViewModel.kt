@@ -42,7 +42,8 @@ class SettingsViewModel @Inject constructor(
         val defaultAppName: String? = "acme-mobile",
         val isWifiOnly: Boolean = true,
         val isDeleteApkAfterInstall: Boolean = false,
-        val downloadedFilesSize: String = "214 MB"
+        val downloadedFilesSize: String = "214 MB",
+        val isTestingConnection: Boolean = false
     )
 
     sealed interface Action {
@@ -76,7 +77,9 @@ class SettingsViewModel @Inject constructor(
     fun init() {
         viewModelScope.launch {
             observeSettingsUseCase().collect { settings ->
-                _uiState.value = settings.toUiState()
+                _uiState.update { current ->
+                    settings.toUiState().copy(isTestingConnection = current.isTestingConnection)
+                }
             }
         }
     }
@@ -84,10 +87,17 @@ class SettingsViewModel @Inject constructor(
     fun onAction(action: Action) {
         when (action) {
             Action.TestConnection -> viewModelScope.launch {
-                val connected = testConnectionUseCase()
-                _uiEvent.emit(
-                    UiEvent.ShowSnackbar(if (connected) CONNECTION_SUCCESS_MESSAGE else CONNECTION_FAILED_MESSAGE)
-                )
+                _uiState.update { it.copy(isTestingConnection = true) }
+                try {
+                    val connected = testConnectionUseCase()
+                    _uiEvent.emit(
+                        UiEvent.ShowSnackbar(if (connected) CONNECTION_SUCCESS_MESSAGE else CONNECTION_FAILED_MESSAGE)
+                    )
+                } catch (failure: Exception) {
+                    _uiEvent.emit(UiEvent.ShowSnackbar(CONNECTION_FAILED_MESSAGE))
+                } finally {
+                    _uiState.update { it.copy(isTestingConnection = false) }
+                }
             }
             Action.ReplaceToken -> viewModelScope.launch {
                 _navigationEvent.emit(NavigationEvent.NavigateToConnect)

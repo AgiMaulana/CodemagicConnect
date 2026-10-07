@@ -1,8 +1,10 @@
 package io.github.agimaulana.codemagicconnect.feature.settings
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -19,6 +21,7 @@ internal fun SettingsRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.init()
@@ -31,7 +34,10 @@ internal fun SettingsRoute(
             viewModel.uiEvent
                 .flowWithLifecycle(lifecycleOwner.lifecycle)
                 .collectLatest { event ->
-                    // handle ui event like snackbars
+                    when (event) {
+                        is SettingsViewModel.UiEvent.ShowSnackbar ->
+                            snackbarHostState.showSnackbar(event.message)
+                    }
                 }
         }
     }
@@ -40,6 +46,7 @@ internal fun SettingsRoute(
         uiState = uiState,
         onAction = viewModel::onAction,
         onBackClicked = { onNavigationEvent(SettingsViewModel.NavigationEvent.NavigateBack) },
+        snackbarHostState = snackbarHostState,
         modifier = modifier
     )
 }

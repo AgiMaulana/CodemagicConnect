@@ -25,14 +25,19 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,13 +55,20 @@ internal fun SettingsScreen(
     uiState: SettingsViewModel.UiState,
     onAction: (SettingsViewModel.Action) -> Unit,
     onBackClicked: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = Color(0xFFF5F6F8)
+    ) { innerPadding ->
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F6F8))
             .verticalScroll(rememberScrollState())
+            .padding(innerPadding)
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -163,7 +175,9 @@ internal fun SettingsScreen(
                 ActionItem(
                     icon = Icons.Default.Refresh,
                     text = stringResource(R.string.settings_action_test_connection),
-                    onClick = { onAction(SettingsViewModel.Action.TestConnection) }
+                    onClick = { onAction(SettingsViewModel.Action.TestConnection) },
+                    enabled = !uiState.isTestingConnection,
+                    isLoading = uiState.isTestingConnection
                 )
 
                 HorizontalDivider(color = Color(0xFFF5F6F8))
@@ -387,6 +401,7 @@ internal fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
     }
+    }
 }
 
 @Composable
@@ -394,12 +409,14 @@ private fun ActionItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     tint: Color = Color(0xFF191A1E),
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    isLoading: Boolean = false
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -409,8 +426,16 @@ private fun ActionItem(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = tint
+            color = tint,
+            modifier = Modifier.weight(1f)
         )
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+                color = tint
+            )
+        }
     }
 }
 
@@ -430,7 +455,8 @@ private fun SettingsScreenPreview() {
                 downloadedFilesSize = "214 MB"
             ),
             onAction = {},
-            onBackClicked = {}
+            onBackClicked = {},
+            snackbarHostState = remember { SnackbarHostState() }
         )
     }
 }
