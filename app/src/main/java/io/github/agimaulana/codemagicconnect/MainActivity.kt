@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
                         settingsScreen(onNavigationEvent = { event ->
                             when (event) {
                                 SettingsViewModel.NavigationEvent.NavigateBack -> navController.popBackStack()
+                                SettingsViewModel.NavigationEvent.NavigateToApps -> navController.navigateToApps()
                                 is SettingsViewModel.NavigationEvent.NavigateToConnect -> {
                                     val navOptions = if (event.suppressAutoRedirect) {
                                         NavOptions.Builder().build()

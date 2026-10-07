@@ -47,6 +47,7 @@ internal fun SettingsRoute(
         onAction = viewModel::onAction,
         onBackClicked = { onNavigationEvent(SettingsViewModel.NavigationEvent.NavigateBack) },
         snackbarHostState = snackbarHostState,
+        onDefaultAppClicked = viewModel::onDefaultAppClicked,
         modifier = modifier
     )
 }
