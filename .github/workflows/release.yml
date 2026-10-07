@@ -69,14 +69,15 @@ jobs:
 
       # Signing credentials are read from env vars by app/build.gradle.kts.
       # STORE_FILE is exported above from the decoded base64 secret.
-      - name: Build release APK and AAB
+      # Distribution is APK-only (no AAB channel), so only the APK is built.
+      - name: Build release APK
         env:
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew :app:assembleRelease :app:bundleRelease \
+          ./gradlew :app:assembleRelease \
             -PappVersionName="${{ steps.version.outputs.version_name }}" \
             -PappVersionCode="${{ steps.version.outputs.version_code }}" \
             --no-daemon --stacktrace
@@ -87,7 +88,6 @@ jobs:
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/codemagic-connect-${TAG}.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "dist/codemagic-connect-${TAG}.aab"
           cp app/build/outputs/mapping/release/mapping.txt "dist/codemagic-connect-${TAG}-mapping.txt"
 
       - name: Upload build artifacts
