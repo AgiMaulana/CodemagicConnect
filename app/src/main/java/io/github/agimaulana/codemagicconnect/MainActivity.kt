@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
                             when (event) {
                                 BuildsViewModel.NavigationEvent.NavigateBack -> navController.popBackStack()
                                 BuildsViewModel.NavigationEvent.NavigateToSettings -> navController.navigateToSettings()
+                                BuildsViewModel.NavigationEvent.NavigateToApps -> navController.navigateToApps()
                             }
                         })
                         settingsScreen(onNavigationEvent = { event ->

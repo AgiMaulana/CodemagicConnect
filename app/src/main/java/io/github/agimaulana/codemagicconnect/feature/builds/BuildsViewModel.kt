@@ -54,6 +54,7 @@ class BuildsViewModel @Inject constructor(
 
     sealed interface NavigationEvent {
         data object NavigateToSettings : NavigationEvent
+        data object NavigateToApps : NavigationEvent
         data object NavigateBack : NavigationEvent
     }
 
@@ -87,6 +88,12 @@ class BuildsViewModel @Inject constructor(
     fun onSettingsClicked() {
         viewModelScope.launch {
             _navigationEvent.emit(NavigationEvent.NavigateToSettings)
+        }
+    }
+
+    fun onAppSelectorClicked() {
+        viewModelScope.launch {
+            _navigationEvent.emit(NavigationEvent.NavigateToApps)
         }
     }
 

@@ -54,6 +54,7 @@ internal fun BuildsScreen(
     uiState: BuildsViewModel.UiState,
     onAction: (BuildsViewModel.Action) -> Unit,
     onSettingsClicked: () -> Unit,
+    onAppSelectorClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -91,7 +92,8 @@ internal fun BuildsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                onClick = onAppSelectorClicked
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -125,7 +127,13 @@ internal fun BuildsScreen(
                             color = Color(0xFF5E6573)
                         )
                     }
-                    Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color(0xFF5E6573))
+                    IconButton(onClick = onAppSelectorClicked) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = stringResource(R.string.builds_app_selector_content_desc),
+                            tint = Color(0xFF5E6573)
+                        )
+                    }
                 }
             }
         }
@@ -442,7 +450,8 @@ private fun BuildsScreenPreview() {
                 )
             ),
             onAction = {},
-            onSettingsClicked = {}
+            onSettingsClicked = {},
+            onAppSelectorClicked = {}
         )
     }
 }
