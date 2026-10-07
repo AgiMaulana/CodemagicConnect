@@ -61,7 +61,7 @@ class SettingsViewModel @Inject constructor(
 
     sealed interface NavigationEvent {
         data object NavigateBack : NavigationEvent
-        data object NavigateToConnect : NavigationEvent
+        data class NavigateToConnect(val suppressAutoRedirect: Boolean = false) : NavigationEvent
     }
 
     private val _uiState = MutableStateFlow(UiState())
@@ -90,11 +90,11 @@ class SettingsViewModel @Inject constructor(
                 )
             }
             Action.ReplaceToken -> viewModelScope.launch {
-                _navigationEvent.emit(NavigationEvent.NavigateToConnect)
+                _navigationEvent.emit(NavigationEvent.NavigateToConnect(suppressAutoRedirect = true))
             }
             Action.RemoveTokenAndSignOut -> viewModelScope.launch {
                 removeTokenUseCase()
-                _navigationEvent.emit(NavigationEvent.NavigateToConnect)
+                _navigationEvent.emit(NavigationEvent.NavigateToConnect(suppressAutoRedirect = false))
             }
             Action.ClearDefaultApp -> viewModelScope.launch {
                 clearDefaultApplicationUseCase()

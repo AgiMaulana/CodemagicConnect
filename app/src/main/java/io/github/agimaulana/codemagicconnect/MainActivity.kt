@@ -13,7 +13,6 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import io.github.agimaulana.codemagicconnect.feature.apps.APPS_ROUTE
 import io.github.agimaulana.codemagicconnect.feature.apps.AppsViewModel
 import io.github.agimaulana.codemagicconnect.feature.apps.appsScreen
 import io.github.agimaulana.codemagicconnect.feature.apps.navigateToApps
@@ -23,6 +22,7 @@ import io.github.agimaulana.codemagicconnect.feature.builds.navigateToBuilds
 import io.github.agimaulana.codemagicconnect.feature.connect.CONNECT_ROUTE
 import io.github.agimaulana.codemagicconnect.feature.connect.ConnectViewModel
 import io.github.agimaulana.codemagicconnect.feature.connect.connectScreen
+import io.github.agimaulana.codemagicconnect.feature.connect.navigateToConnect
 import io.github.agimaulana.codemagicconnect.feature.settings.SettingsViewModel
 import io.github.agimaulana.codemagicconnect.feature.settings.navigateToSettings
 import io.github.agimaulana.codemagicconnect.feature.settings.settingsScreen
@@ -54,6 +54,9 @@ class MainActivity : ComponentActivity() {
                                         navOptions = NavOptions.Builder().setPopUpTo(CONNECT_ROUTE, inclusive = true).build()
                                     )
                                 }
+                                ConnectViewModel.NavigationEvent.NavigateBack -> {
+                                    navController.popBackStack()
+                                }
                                 is ConnectViewModel.NavigationEvent.OpenBrowser -> {
                                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.url)))
                                 }
@@ -75,10 +78,16 @@ class MainActivity : ComponentActivity() {
                         settingsScreen(onNavigationEvent = { event ->
                             when (event) {
                                 SettingsViewModel.NavigationEvent.NavigateBack -> navController.popBackStack()
-                                SettingsViewModel.NavigationEvent.NavigateToConnect -> {
-                                    navController.navigate(CONNECT_ROUTE) {
-                                        popUpTo(0) { inclusive = true }
+                                is SettingsViewModel.NavigationEvent.NavigateToConnect -> {
+                                    val navOptions = if (event.suppressAutoRedirect) {
+                                        NavOptions.Builder().build()
+                                    } else {
+                                        NavOptions.Builder().setPopUpTo(0, inclusive = true).build()
                                     }
+                                    navController.navigateToConnect(
+                                        suppressAutoRedirect = event.suppressAutoRedirect,
+                                        navOptions = navOptions
+                                    )
                                 }
                             }
                         })

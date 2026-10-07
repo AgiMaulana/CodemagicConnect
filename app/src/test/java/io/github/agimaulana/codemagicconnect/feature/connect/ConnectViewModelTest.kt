@@ -1,5 +1,6 @@
 package io.github.agimaulana.codemagicconnect.feature.connect
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import io.github.agimaulana.codemagicconnect.core.testing.CoroutineMainDispatcherRule
 import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
@@ -30,9 +31,10 @@ class ConnectViewModelTest {
     private val observeAppPreferencesUseCase = mockk<ObserveAppPreferencesUseCase>()
 
     private val viewModel = ConnectViewModel(
-        verifyAndSaveTokenUseCase,
-        isTokenStoredUseCase,
-        observeAppPreferencesUseCase
+        savedStateHandle = SavedStateHandle(),
+        verifyAndSaveTokenUseCase = verifyAndSaveTokenUseCase,
+        isTokenStoredUseCase = isTokenStoredUseCase,
+        observeAppPreferencesUseCase = observeAppPreferencesUseCase
     )
 
     @Test
@@ -88,6 +90,47 @@ class ConnectViewModelTest {
             )
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `given replace intent with stored token when init then stays on connect`() = runTest {
+        coEvery { isTokenStoredUseCase() } returns true
+        val replaceViewModel = ConnectViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CONNECT_SUPPRESS_AUTO_REDIRECT_ARG to true)
+            ),
+            verifyAndSaveTokenUseCase = verifyAndSaveTokenUseCase,
+            isTokenStoredUseCase = isTokenStoredUseCase,
+            observeAppPreferencesUseCase = observeAppPreferencesUseCase
+        )
+
+        replaceViewModel.navigationEvent.test {
+            replaceViewModel.init()
+            expectNoEvents()
+        }
+
+        coVerify(exactly = 0) { isTokenStoredUseCase() }
+    }
+
+    @Test
+    fun `given replace intent with stored token when init then checking flag is cleared`() = runTest {
+        coEvery { isTokenStoredUseCase() } returns true
+        val replaceViewModel = ConnectViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(CONNECT_SUPPRESS_AUTO_REDIRECT_ARG to true)
+            ),
+            verifyAndSaveTokenUseCase = verifyAndSaveTokenUseCase,
+            isTokenStoredUseCase = isTokenStoredUseCase,
+            observeAppPreferencesUseCase = observeAppPreferencesUseCase
+        )
+
+        replaceViewModel.navigationEvent.test {
+            replaceViewModel.init()
+            expectNoEvents()
+        }
+
+        coVerify(exactly = 0) { isTokenStoredUseCase() }
+        assertFalse(replaceViewModel.uiState.value.isCheckingStoredToken)
     }
 
     @Test
