@@ -1,0 +1,6 @@
+# Release-only startup crash (issue #2):
+#   java.lang.IllegalAccessError: Class kotlin.sequences.d extended by class dk1 is inaccessible
+# R8 renamed/merged Kotlin's internal sequence classes, leaving an inaccessible
+# superclass that a subclass in another package extended while MainDispatcherLoader
+# initialized. Keep the package so R8 neither renames nor merges these classes.
+-keep class kotlin.sequences.** { *; }
