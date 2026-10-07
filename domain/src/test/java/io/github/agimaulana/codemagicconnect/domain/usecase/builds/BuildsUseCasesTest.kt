@@ -3,13 +3,17 @@ package io.github.agimaulana.codemagicconnect.domain.usecase.builds
 import io.github.agimaulana.codemagicconnect.domain.gateway.ApplicationsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.ArtifactsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.BuildsGateway
+import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
+import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.BuildStatus
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicBuild
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -20,6 +24,7 @@ class BuildsUseCasesTest {
     private val applicationsGateway = mockk<ApplicationsGateway>()
     private val buildsGateway = mockk<BuildsGateway>()
     private val artifactsGateway = mockk<ArtifactsGateway>()
+    private val preferencesGateway = mockk<PreferencesGateway>()
 
     private val app = CodemagicApplication("app-1", "acme", "github.com/acme", null, teamId = "team-9")
 
@@ -83,10 +88,34 @@ class BuildsUseCasesTest {
 
     @Test
     fun `given artifact id when install then delegates to artifacts gateway`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = false))
         coEvery { artifactsGateway.install("a1") } returns Unit
 
-        InstallArtifactUseCaseImpl(artifactsGateway).invoke("a1")
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
 
         coVerify(exactly = 1) { artifactsGateway.install("a1") }
+    }
+
+    @Test
+    fun `given delete apk enabled when install then apk file is deleted after installer runs`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = true))
+        coEvery { artifactsGateway.install("a1") } returns Unit
+        coEvery { artifactsGateway.deleteDownload("a1") } returns Unit
+
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
+
+        coVerify(exactly = 1) { artifactsGateway.install("a1") }
+        coVerify(exactly = 1) { artifactsGateway.deleteDownload("a1") }
+    }
+
+    @Test
+    fun `given delete apk disabled when install then apk file is kept`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = false))
+        coEvery { artifactsGateway.install("a1") } returns Unit
+
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
+
+        coVerify(exactly = 1) { artifactsGateway.install("a1") }
+        coVerify(exactly = 0) { artifactsGateway.deleteDownload(any()) }
     }
 }
