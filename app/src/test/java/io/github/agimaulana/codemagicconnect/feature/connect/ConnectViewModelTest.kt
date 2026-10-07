@@ -2,15 +2,21 @@ package io.github.agimaulana.codemagicconnect.feature.connect
 
 import app.cash.turbine.test
 import io.github.agimaulana.codemagicconnect.core.testing.CoroutineMainDispatcherRule
+import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
+import io.github.agimaulana.codemagicconnect.domain.usecase.apps.ObserveAppPreferencesUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.connect.InvalidTokenException
 import io.github.agimaulana.codemagicconnect.domain.usecase.connect.IsTokenStoredUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.connect.VerifyAndSaveTokenUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -21,8 +27,13 @@ class ConnectViewModelTest {
 
     private val verifyAndSaveTokenUseCase = mockk<VerifyAndSaveTokenUseCase>()
     private val isTokenStoredUseCase = mockk<IsTokenStoredUseCase>()
+    private val observeAppPreferencesUseCase = mockk<ObserveAppPreferencesUseCase>()
 
-    private val viewModel = ConnectViewModel(verifyAndSaveTokenUseCase, isTokenStoredUseCase)
+    private val viewModel = ConnectViewModel(
+        verifyAndSaveTokenUseCase,
+        isTokenStoredUseCase,
+        observeAppPreferencesUseCase
+    )
 
     @Test
     fun `given no stored token when init then stays on connect`() = runTest {
@@ -35,12 +46,46 @@ class ConnectViewModelTest {
     }
 
     @Test
-    fun `given stored token when init then navigates to apps`() = runTest {
+    fun `given open connect screen when checking token availability then save and verify button shows loading`() = runTest {
+        val tokenCheckGate = CompletableDeferred<Unit>()
+        coEvery { isTokenStoredUseCase() } coAnswers { tokenCheckGate.await(); false }
+
+        viewModel.uiState.test {
+            assertFalse(awaitItem().isCheckingStoredToken)
+            viewModel.init()
+            assertTrue(awaitItem().isCheckingStoredToken)
+            tokenCheckGate.complete(Unit)
+            assertFalse(awaitItem().isCheckingStoredToken)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `given stored token and no default app selected when init then navigates to apps`() = runTest {
         coEvery { isTokenStoredUseCase() } returns true
+        every { observeAppPreferencesUseCase() } returns flowOf(AppPreferences())
 
         viewModel.navigationEvent.test {
             viewModel.init()
             assertEquals(ConnectViewModel.NavigationEvent.NavigateToApps, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `given stored token and default app selected when init then navigates to builds`() = runTest {
+        coEvery { isTokenStoredUseCase() } returns true
+        every { observeAppPreferencesUseCase() } returns flowOf(
+            AppPreferences(defaultAppId = "app_123", defaultAppName = "My App")
+        )
+
+        viewModel.navigationEvent.test {
+            viewModel.init()
+            val event = awaitItem()
+            assertEquals(
+                ConnectViewModel.NavigationEvent.NavigateToBuilds(appId = "app_123"),
+                event as ConnectViewModel.NavigationEvent.NavigateToBuilds
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -57,6 +102,22 @@ class ConnectViewModelTest {
         }
 
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun `given token typed when verifying and saving then save and verify button shows loading`() = runTest {
+        val verificationGate = CompletableDeferred<Unit>()
+        coEvery { verifyAndSaveTokenUseCase("cm_valid") } coAnswers { verificationGate.await() }
+
+        viewModel.onAction(ConnectViewModel.Action.UpdateToken("cm_valid"))
+        viewModel.uiState.test {
+            assertFalse(awaitItem().isLoading)
+            viewModel.onAction(ConnectViewModel.Action.VerifyAndSaveToken)
+            assertTrue(awaitItem().isLoading)
+            verificationGate.complete(Unit)
+            assertFalse(awaitItem().isLoading)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

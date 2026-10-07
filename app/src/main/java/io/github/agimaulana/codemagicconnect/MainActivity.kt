@@ -48,6 +48,12 @@ class MainActivity : ComponentActivity() {
                                         navOptions = NavOptions.Builder().setPopUpTo(CONNECT_ROUTE, inclusive = true).build()
                                     )
                                 }
+                                is ConnectViewModel.NavigationEvent.NavigateToBuilds -> {
+                                    navController.navigateToBuilds(
+                                        appId = event.appId,
+                                        navOptions = NavOptions.Builder().setPopUpTo(CONNECT_ROUTE, inclusive = true).build()
+                                    )
+                                }
                                 is ConnectViewModel.NavigationEvent.OpenBrowser -> {
                                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.url)))
                                 }

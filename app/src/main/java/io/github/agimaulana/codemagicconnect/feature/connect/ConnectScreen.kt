@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -131,16 +132,26 @@ internal fun ConnectScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            enabled = !uiState.isLoading && uiState.token.isNotBlank(),
+            enabled = !uiState.isLoading &&
+                !uiState.isCheckingStoredToken &&
+                uiState.token.isNotBlank(),
             colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF2E4DF5)
             )
         ) {
-            Text(
-                text = stringResource(R.string.connect_verify_and_save_button),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            if (uiState.isLoading || uiState.isCheckingStoredToken) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = BUTTON_LOADING_INDICATOR_STROKE_WIDTH
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.connect_verify_and_save_button),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -183,6 +194,8 @@ internal fun ConnectScreen(
         }
     }
 }
+
+private val BUTTON_LOADING_INDICATOR_STROKE_WIDTH = 2.dp
 
 @Preview
 @Composable
