@@ -1,0 +1,147 @@
+name: Release
+
+# Triggers when a vX.Y.Z tag is created (e.g. when publishing a GitHub
+# release that creates the tag).
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+# Don't let a re-pushed tag race with an in-flight release run.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build signed release
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 gives the full commit history, needed to auto-generate
+      # release notes from commits.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      # The default `packages` value still asks for the deprecated `tools`
+      # package, which Google no longer serves (`Failed to find package 'tools'`).
+      # Pin packages to the ones cmdline-tools 16+ can actually resolve.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      # Extract X.Y.Z from the vX.Y.Z tag name and derive a numeric versionCode
+      # (major * 10000 + minor * 100 + patch).
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${VERSION}"
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "Tag ${GITHUB_REF_NAME} -> versionName ${VERSION}, versionCode ${VERSION_CODE}"
+
+      # The keystore is gitignored, so it is shipped to CI as a base64 secret.
+      # Decode it to a temp file and export STORE_FILE to point at it — nothing
+      # is written into the checked-out repo and no keystore name is hardcoded.
+      # Generate the secret with: base64 -i ant-colony-keystore.jks | pbcopy
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          KEYSTORE_PATH="$RUNNER_TEMP/release-keystore.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          echo "STORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      # Signing credentials are read from env vars by app/build.gradle.kts.
+      # STORE_FILE is exported above from the decoded base64 secret.
+      - name: Build release APK and AAB
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew :app:assembleRelease :app:bundleRelease \
+            -PappVersionName="${{ steps.version.outputs.version_name }}" \
+            -PappVersionCode="${{ steps.version.outputs.version_code }}" \
+            --no-daemon --stacktrace
+
+      - name: Collect artifacts
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/codemagic-connect-${TAG}.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/codemagic-connect-${TAG}.aab"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    name: Sign and create GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 is required by git-cliff to walk the full history.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum * > checksums.txt
+
+      # Generate release notes from the commits of the latest tag using
+      # git-cliff (Conventional Commits aware). No cliff.toml -> default config.
+      - name: Generate release notes from commits
+        id: git-cliff
+        continue-on-error: true
+        uses: orhun/git-cliff-action@v4
+        with:
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: CHANGES.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      # Idempotent: on a fresh tag this creates the release; on a re-run
+      # (re-pushed tag) it just re-uploads the assets, keeping existing notes.
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="--generate-notes"
+          if [ -s CHANGES.md ]; then NOTES="--notes-file CHANGES.md"; fi
+          if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists — uploading assets"
+            gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/* \
+              --title "Codemagic Connect ${GITHUB_REF_NAME}" \
+              $NOTES
+          fi

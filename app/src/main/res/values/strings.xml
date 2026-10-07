@@ -1,0 +1,75 @@
+<resources>
+    <string name="app_name">Codemagic Connect (Unofficial)</string>
+
+    <!-- Connect Screen -->
+    <string name="connect_title">Connect your\nCodemagic account</string>
+    <string name="connect_subtitle">Paste a personal API token to browse finished builds and install their APKs.</string>
+    <string name="connect_api_token_label">API token</string>
+    <string name="connect_api_token_toggle_visibility">Toggle visibility</string>
+    <string name="connect_token_encryption_notice">Stored encrypted on this device only. Remove it any time in Settings.</string>
+    <string name="connect_verify_and_save_button">Verify &amp; save token</string>
+    <string name="connect_how_to_create_title">How to create a token</string>
+    <string name="connect_how_to_create_steps">1. Login to Codemagic\n2. Open https:\/\/codemagic.io\/settings\n3. Scroll down to API token
+ section\n4. Tap Show, then copy the token</string>
+    <string name="connect_open_browser">Open Codemagic in browser</string>
+
+    <!-- Apps Screen -->
+    <string name="apps_title">Choose an app</string>
+    <string name="apps_subtitle">Pick the Codemagic app, usually one repository, whose builds you want to browse.</string>
+    <string name="apps_search_placeholder">Search apps</string>
+    <string name="apps_favorite_content_desc">Favorite</string>
+    <string name="apps_no_builds_yet">No builds yet</string>
+    <string name="apps_open_automatically_checkbox_label">Open %1$s automatically next time.\nChange anytime in Settings.</string>
+    <string name="apps_continue_button">Continue to builds</string>
+
+    <!-- Builds Screen -->
+    <string name="builds_title">Builds</string>
+    <string name="builds_refresh_content_desc">Refresh</string>
+    <string name="builds_settings_content_desc">Settings</string>
+    <string name="builds_default_branch">%1$s · Default</string>
+    <string name="builds_filter_succeeded">Succeeded</string>
+    <string name="builds_filter_all_branches">All branches</string>
+    <string name="builds_filter_workflow">Workflow</string>
+    <string name="builds_status_finished">Finished</string>
+    <string name="builds_artifact_downloading">Downloading · %1$s of %2$s MB · %3$d%%</string>
+    <string name="builds_artifact_downloaded">Downloaded · %1$s MB</string>
+    <string name="builds_artifact_failed">Download failed · connection lost</string>
+    <string name="builds_button_download">Download</string>
+    <string name="builds_button_cancel_content_desc">Cancel</string>
+    <string name="builds_button_install">Install</string>
+    <string name="builds_button_retry">Retry</string>
+    <string name="builds_size_mb">%1$s MB</string>
+
+    <!-- Download Complete Bottom Sheet -->
+    <string name="bottom_sheet_title">Download complete</string>
+    <string name="bottom_sheet_subtitle">Ready to install</string>
+    <string name="bottom_sheet_size_label">Size</string>
+    <string name="bottom_sheet_workflow_label">Workflow</string>
+    <string name="bottom_sheet_branch_label">Branch</string>
+    <string name="bottom_sheet_install_notice">Android will ask you to confirm before the app is installed or updated.</string>
+    <string name="bottom_sheet_install_button">Install</string>
+    <string name="bottom_sheet_dismiss_button">Not now · keep file</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_back_content_desc">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_account">CODEMAGIC ACCOUNT</string>
+    <string name="settings_api_token_label">API token</string>
+    <string name="settings_status_connected">Connected</string>
+    <string name="settings_token_added">Added %1$s</string>
+    <string name="settings_action_test_connection">Test connection</string>
+    <string name="settings_action_replace_token">Replace token</string>
+    <string name="settings_action_remove_token">Remove token &amp; sign out</string>
+    <string name="settings_token_disclaimer">The token is kept in Android Keystore and is never shown in full. Revoking it in Codemagic also stops this app from loading builds.</string>
+    <string name="settings_section_app">APP</string>
+    <string name="settings_default_app_title">Default app</string>
+    <string name="settings_default_app_subtitle">%1$s · opens builds on launch</string>
+    <string name="settings_clear_default_app">Clear default &amp; ask every time</string>
+    <string name="settings_no_default_app">No default app set</string>
+    <string name="settings_section_downloads">DOWNLOADS</string>
+    <string name="settings_wifi_only_title">Wi-Fi only</string>
+    <string name="settings_wifi_only_subtitle">Avoid mobile data for large APKs</string>
+    <string name="settings_delete_apk_title">Delete APK after install</string>
+    <string name="settings_delete_apk_subtitle">Free up storage automatically</string>
+    <string name="settings_clear_downloads_title">Clear downloaded files</string>
+</resources>

@@ -1,0 +1,22 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Kotlin build caches
+.kotlin/
+
+# Command Code agent metadata
+.commandcode/
+
+# Keystore files
+*.jks
+*.keystore
+*.p12
+*.key
