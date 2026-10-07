@@ -15,6 +15,9 @@ local.properties
 # Command Code agent metadata
 .commandcode/
 
+# Agents
+AGENTS.local.md
+
 # Keystore files
 *.jks
 *.keystore

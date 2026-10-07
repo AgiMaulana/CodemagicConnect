@@ -64,7 +64,7 @@ internal fun ExampleScreen(
 **Never** initialize data fetching in the `ViewModel` constructor. Use an explicit `init()` method called from the composable via `LaunchedEffect(Unit)`.
 
 ## 3. Navigation
-Uses Jetpack Compose Navigation. The root graph lives in `:app` (`MainActivity.kt`/`GdApp.kt`). 
+Uses Jetpack Compose Navigation. The root graph lives in `:app` (`MainActivity.kt`/`CodemagicConnectApp.kt`). 
 - Feature navigation lives in `feature/{feature}/{screen}/{ScreenName}Navigation.kt`.
 - **ViewModels must never access NavController.** Pass navigation events upward via `NavigationEvent` to the Route's `onNavigationEvent` callback.
 - **Arguments:** Passed via `SavedStateHandle` and wrapped in a strongly typed args class.
