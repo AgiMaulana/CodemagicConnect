@@ -39,6 +39,9 @@
     <string name="builds_button_install">Install</string>
     <string name="builds_button_retry">Retry</string>
     <string name="builds_size_mb">%1$s MB</string>
+    <string name="builds_timestamp_today">Today, %1$s</string>
+    <string name="builds_timestamp_yesterday">Yesterday, %1$s</string>
+    <string name="builds_timestamp_date">%1$s, %2$s</string>
 
     <!-- Download Complete Bottom Sheet -->
     <string name="bottom_sheet_title">Download complete</string>
