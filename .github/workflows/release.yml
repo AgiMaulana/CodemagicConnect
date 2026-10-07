@@ -88,6 +88,7 @@ jobs:
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/codemagic-connect-${TAG}.apk"
           cp app/build/outputs/bundle/release/app-release.aab "dist/codemagic-connect-${TAG}.aab"
+          cp app/build/outputs/mapping/release/mapping.txt "dist/codemagic-connect-${TAG}-mapping.txt"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
