@@ -7,7 +7,6 @@ import io.github.agimaulana.codemagicconnect.domain.model.Settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface ObserveSettingsUseCase {
@@ -46,21 +45,21 @@ internal class ObserveSettingsUseCaseImpl @Inject constructor(
 
     override fun invoke(): Flow<Settings> = combine(
         authGateway.observeToken(),
-        preferencesGateway.observePreferences()
-    ) { token, preferences -> token to preferences }
-        .map { (token, preferences) ->
-            Settings(
-                isTokenConnected = token != null,
-                token = token?.token,
-                tokenAddedAtEpochMillis = token?.addedAtEpochMillis,
-                tokenLastVerifiedAtEpochMillis = token?.lastVerifiedAtEpochMillis,
-                defaultAppId = preferences.defaultAppId,
-                defaultAppName = preferences.defaultAppName,
-                wifiOnly = preferences.wifiOnly,
-                deleteApkAfterInstall = preferences.deleteApkAfterInstall,
-                downloadedFilesBytes = artifactsGateway.downloadedFilesSizeBytes()
-            )
-        }
+        preferencesGateway.observePreferences(),
+        artifactsGateway.observeDownloads()
+    ) { token, preferences, _ ->
+        Settings(
+            isTokenConnected = token != null,
+            token = token?.token,
+            tokenAddedAtEpochMillis = token?.addedAtEpochMillis,
+            tokenLastVerifiedAtEpochMillis = token?.lastVerifiedAtEpochMillis,
+            defaultAppId = preferences.defaultAppId,
+            defaultAppName = preferences.defaultAppName,
+            wifiOnly = preferences.wifiOnly,
+            deleteApkAfterInstall = preferences.deleteApkAfterInstall,
+            downloadedFilesBytes = artifactsGateway.downloadedFilesSizeBytes()
+        )
+    }
 }
 
 internal class TestConnectionUseCaseImpl @Inject constructor(
