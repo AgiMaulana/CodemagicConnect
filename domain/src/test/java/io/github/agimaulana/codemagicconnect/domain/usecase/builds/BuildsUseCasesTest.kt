@@ -3,16 +3,23 @@ package io.github.agimaulana.codemagicconnect.domain.usecase.builds
 import io.github.agimaulana.codemagicconnect.domain.gateway.ApplicationsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.ArtifactsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.BuildsGateway
+import io.github.agimaulana.codemagicconnect.domain.gateway.NetworkMonitorGateway
+import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
+import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.BuildStatus
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicBuild
+import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyDownloadPolicyImpl
+import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyThreshold
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Test
 
 class BuildsUseCasesTest {
@@ -20,6 +27,9 @@ class BuildsUseCasesTest {
     private val applicationsGateway = mockk<ApplicationsGateway>()
     private val buildsGateway = mockk<BuildsGateway>()
     private val artifactsGateway = mockk<ArtifactsGateway>()
+    private val preferencesGateway = mockk<PreferencesGateway>()
+    private val networkMonitorGateway = mockk<NetworkMonitorGateway>()
+    private val wifiOnlyDownloadPolicy = WifiOnlyDownloadPolicyImpl(WifiOnlyThreshold.Default)
 
     private val app = CodemagicApplication("app-1", "acme", "github.com/acme", null, teamId = "team-9")
 
@@ -74,11 +84,51 @@ class BuildsUseCasesTest {
     @Test
     fun `given artifact when download then delegates to artifacts gateway`() = runTest {
         val artifact = BuildArtifact("a1", "app.apk", 100)
+        coEvery { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(wifiOnly = false))
         coEvery { artifactsGateway.download("b1", artifact) } returns Unit
 
-        DownloadArtifactUseCaseImpl(artifactsGateway).invoke("b1", artifact)
+        downloadUseCase().invoke("b1", artifact)
 
         coVerify(exactly = 1) { artifactsGateway.download("b1", artifact) }
+    }
+
+    @Test
+    fun `given wifi only and large artifact on cellular when download then blocked`() = runTest {
+        val largeArtifact = BuildArtifact("a1", "app.apk", 60_000_000)
+        coEvery { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(wifiOnly = true))
+        coEvery { networkMonitorGateway.isWifiConnected() } returns false
+        coEvery { artifactsGateway.download("b1", largeArtifact) } returns Unit
+
+        try {
+            downloadUseCase().invoke("b1", largeArtifact)
+            fail("Expected RequiresWifiException")
+        } catch (expected: RequiresWifiException) {
+            coVerify(exactly = 0) { artifactsGateway.download("b1", largeArtifact) }
+        }
+    }
+
+    @Test
+    fun `given wifi only and large artifact on wifi when download then delegates`() = runTest {
+        val largeArtifact = BuildArtifact("a1", "app.apk", 60_000_000)
+        coEvery { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(wifiOnly = true))
+        coEvery { networkMonitorGateway.isWifiConnected() } returns true
+        coEvery { artifactsGateway.download("b1", largeArtifact) } returns Unit
+
+        downloadUseCase().invoke("b1", largeArtifact)
+
+        coVerify(exactly = 1) { artifactsGateway.download("b1", largeArtifact) }
+    }
+
+    @Test
+    fun `given wifi only and small artifact on cellular when download then delegates`() = runTest {
+        val smallArtifact = BuildArtifact("a1", "app.apk", 100)
+        coEvery { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(wifiOnly = true))
+        coEvery { networkMonitorGateway.isWifiConnected() } returns false
+        coEvery { artifactsGateway.download("b1", smallArtifact) } returns Unit
+
+        downloadUseCase().invoke("b1", smallArtifact)
+
+        coVerify(exactly = 1) { artifactsGateway.download("b1", smallArtifact) }
     }
 
     @Test
@@ -89,4 +139,11 @@ class BuildsUseCasesTest {
 
         coVerify(exactly = 1) { artifactsGateway.install("a1") }
     }
+
+    private fun downloadUseCase() = DownloadArtifactUseCaseImpl(
+        artifactsGateway,
+        preferencesGateway,
+        networkMonitorGateway,
+        wifiOnlyDownloadPolicy
+    )
 }

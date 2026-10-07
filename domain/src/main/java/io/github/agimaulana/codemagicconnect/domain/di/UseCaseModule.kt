@@ -48,6 +48,8 @@ import io.github.agimaulana.codemagicconnect.domain.usecase.settings.TestConnect
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.TestConnectionUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.workflows.GetWorkflowsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.workflows.GetWorkflowsUseCaseImpl
+import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyDownloadPolicy
+import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyDownloadPolicyImpl
 import javax.inject.Singleton
 
 @Module
@@ -105,6 +107,10 @@ internal abstract class UseCaseModule {
     @Binds
     @Singleton
     internal abstract fun bindDownloadArtifactUseCase(impl: DownloadArtifactUseCaseImpl): DownloadArtifactUseCase
+
+    @Binds
+    @Singleton
+    internal abstract fun bindWifiOnlyDownloadPolicy(impl: WifiOnlyDownloadPolicyImpl): WifiOnlyDownloadPolicy
 
     @Binds
     @Singleton

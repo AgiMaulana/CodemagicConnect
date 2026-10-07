@@ -3,11 +3,15 @@ package io.github.agimaulana.codemagicconnect.domain.usecase.builds
 import io.github.agimaulana.codemagicconnect.domain.gateway.ApplicationsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.ArtifactsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.BuildsGateway
+import io.github.agimaulana.codemagicconnect.domain.gateway.NetworkMonitorGateway
+import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
+import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyDownloadPolicy
 import io.github.agimaulana.codemagicconnect.domain.model.ArtifactDownload
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicBuild
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 interface GetApplicationUseCase {
@@ -51,10 +55,19 @@ internal class GetBuildsUseCaseImpl @Inject constructor(
 }
 
 internal class DownloadArtifactUseCaseImpl @Inject constructor(
-    private val artifactsGateway: ArtifactsGateway
+    private val artifactsGateway: ArtifactsGateway,
+    private val preferencesGateway: PreferencesGateway,
+    private val networkMonitorGateway: NetworkMonitorGateway,
+    private val wifiOnlyDownloadPolicy: WifiOnlyDownloadPolicy
 ) : DownloadArtifactUseCase {
 
     override suspend fun invoke(buildId: String, artifact: BuildArtifact) {
+        val preferences = preferencesGateway.observePreferences().first()
+        if (wifiOnlyDownloadPolicy.requiresWifi(artifact.sizeBytes, preferences.wifiOnly) &&
+            !networkMonitorGateway.isWifiConnected()
+        ) {
+            throw RequiresWifiException(wifiOnlyDownloadPolicy.threshold.bytes)
+        }
         artifactsGateway.download(buildId, artifact)
     }
 }

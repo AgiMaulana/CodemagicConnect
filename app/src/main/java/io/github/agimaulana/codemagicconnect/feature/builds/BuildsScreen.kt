@@ -32,8 +32,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,15 +60,21 @@ internal fun BuildsScreen(
     onAction: (BuildsViewModel.Action) -> Unit,
     onSettingsClicked: () -> Unit,
     onAppSelectorClicked: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F6F8))
-            .padding(horizontal = 24.dp)
-    ) {
-        Spacer(modifier = Modifier.height(48.dp))
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color(0xFFF5F6F8)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(innerPadding)
+        ) {
+            Spacer(modifier = Modifier.height(48.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -79,10 +89,18 @@ internal fun BuildsScreen(
             )
             Row {
                 IconButton(onClick = { onAction(BuildsViewModel.Action.Refresh) }) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = stringResource(R.string.builds_refresh_content_desc), tint = Color(0xFF191A1E))
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.builds_refresh_content_desc),
+                        tint = Color(0xFF191A1E)
+                    )
                 }
                 IconButton(onClick = onSettingsClicked) {
-                    Icon(imageVector = Icons.Default.Settings, contentDescription = stringResource(R.string.builds_settings_content_desc), tint = Color(0xFF191A1E))
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(R.string.builds_settings_content_desc),
+                        tint = Color(0xFF191A1E)
+                    )
                 }
             }
         }
@@ -128,12 +146,11 @@ internal fun BuildsScreen(
                             color = Color(0xFF5E6573)
                         )
                     }
-                    IconButton(onClick = onAppSelectorClicked) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = stringResource(R.string.builds_app_selector_content_desc),
-                            tint = Color(0xFF5E6573)
-                        )
+                    IconButton(onClick = onAppSelectorClicked) {Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = stringResource(R.string.builds_app_selector_content_desc),
+                        tint = Color(0xFF5E6573)
+                    )
                     }
                 }
             }
@@ -198,6 +215,7 @@ internal fun BuildsScreen(
                 }
             }
         }
+    }
     }
 }
 
@@ -489,6 +507,7 @@ private fun BuildsScreenPreview() {
                     )
                 )
             ),
+            snackbarHostState = remember { SnackbarHostState() },
             onAction = {},
             onSettingsClicked = {},
             onAppSelectorClicked = {}

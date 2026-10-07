@@ -73,7 +73,7 @@
     <string name="settings_no_default_app">No default app set</string>
     <string name="settings_section_downloads">DOWNLOADS</string>
     <string name="settings_wifi_only_title">Wi-Fi only</string>
-    <string name="settings_wifi_only_subtitle">Avoid mobile data for large APKs</string>
+    <string name="settings_wifi_only_subtitle">Avoid mobile data for APKs over 50 MB</string>
     <string name="settings_delete_apk_title">Delete APK after install</string>
     <string name="settings_delete_apk_subtitle">Free up storage automatically</string>
     <string name="settings_clear_downloads_title">Clear downloaded files</string>
