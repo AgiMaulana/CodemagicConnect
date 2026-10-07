@@ -3,12 +3,14 @@ package io.github.agimaulana.codemagicconnect.feature.connect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.agimaulana.codemagicconnect.domain.usecase.apps.ObserveAppPreferencesUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.connect.IsTokenStoredUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.connect.VerifyAndSaveTokenUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,12 +18,14 @@ import javax.inject.Inject
 @HiltViewModel
 class ConnectViewModel @Inject constructor(
     private val verifyAndSaveTokenUseCase: VerifyAndSaveTokenUseCase,
-    private val isTokenStoredUseCase: IsTokenStoredUseCase
+    private val isTokenStoredUseCase: IsTokenStoredUseCase,
+    private val observeAppPreferencesUseCase: ObserveAppPreferencesUseCase
 ) : ViewModel() {
 
     data class UiState(
         val token: String = "",
         val isLoading: Boolean = false,
+        val isCheckingStoredToken: Boolean = false,
         val isTokenVisible: Boolean = false
     )
 
@@ -38,6 +42,7 @@ class ConnectViewModel @Inject constructor(
 
     sealed interface NavigationEvent {
         data object NavigateToApps : NavigationEvent
+        data class NavigateToBuilds(val appId: String) : NavigationEvent
         data class OpenBrowser(val url: String) : NavigationEvent
     }
 
@@ -52,8 +57,18 @@ class ConnectViewModel @Inject constructor(
 
     fun init() {
         viewModelScope.launch {
-            if (isTokenStoredUseCase()) {
-                _navigationEvent.emit(NavigationEvent.NavigateToApps)
+            _uiState.update { it.copy(isCheckingStoredToken = true) }
+            try {
+                if (isTokenStoredUseCase()) {
+                    val defaultAppId = observeAppPreferencesUseCase().first().defaultAppId
+                    if (defaultAppId != null) {
+                        _navigationEvent.emit(NavigationEvent.NavigateToBuilds(defaultAppId))
+                    } else {
+                        _navigationEvent.emit(NavigationEvent.NavigateToApps)
+                    }
+                }
+            } finally {
+                _uiState.update { it.copy(isCheckingStoredToken = false) }
             }
         }
     }
