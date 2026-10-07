@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
@@ -230,9 +231,13 @@ private fun BuildItem(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
+                        .weight(1f, fill = false)
                         .background(Color(0xFFF1F3F4), RoundedCornerShape(4.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
@@ -240,14 +245,18 @@ private fun BuildItem(
                         text = build.branch,
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        color = Color(0xFF191A1E)
+                        color = Color(0xFF191A1E),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "${build.startedAt}   ${build.triggerer}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF5E6573)
+                    color = Color(0xFF5E6573),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
