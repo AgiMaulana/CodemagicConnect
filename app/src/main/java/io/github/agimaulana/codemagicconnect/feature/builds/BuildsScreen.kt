@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
@@ -183,8 +184,8 @@ internal fun BuildsScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(uiState.builds) { build ->
-                    BuildItem(build = build, onAction = onAction)
+                items(uiState.builds) { item ->
+                    BuildItem(build = item.build, timestamp = item.timestamp, onAction = onAction)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
@@ -195,6 +196,7 @@ internal fun BuildsScreen(
 @Composable
 private fun BuildItem(
     build: CodemagicBuild,
+    timestamp: BuildsViewModel.BuildTimestamp,
     onAction: (BuildsViewModel.Action) -> Unit
 ) {
     Card(
@@ -230,9 +232,13 @@ private fun BuildItem(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
                     modifier = Modifier
+                        .weight(1f, fill = false)
                         .background(Color(0xFFF1F3F4), RoundedCornerShape(4.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
@@ -240,14 +246,21 @@ private fun BuildItem(
                         text = build.branch,
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        color = Color(0xFF191A1E)
+                        color = Color(0xFF191A1E),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${build.startedAt}   ${build.triggerer}",
+                    text = buildTimestampLabel(
+                        timestamp = timestamp,
+                        triggerer = build.triggerer
+                    ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF5E6573)
+                    color = Color(0xFF5E6573),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -262,6 +275,27 @@ private fun BuildItem(
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun buildTimestampLabel(
+    timestamp: BuildsViewModel.BuildTimestamp,
+    triggerer: String
+): String {
+    val label = when (timestamp) {
+        is BuildsViewModel.BuildTimestamp.Today ->
+            stringResource(R.string.builds_timestamp_today, timestamp.timeText)
+        is BuildsViewModel.BuildTimestamp.Yesterday ->
+            stringResource(R.string.builds_timestamp_yesterday, timestamp.timeText)
+        is BuildsViewModel.BuildTimestamp.OnDate ->
+            stringResource(R.string.builds_timestamp_date, timestamp.dateText, timestamp.timeText)
+        is BuildsViewModel.BuildTimestamp.Unknown -> timestamp.rawValue
+    }
+    return if (triggerer.isBlank()) {
+        label
+    } else {
+        "$label   $triggerer"
     }
 }
 
@@ -396,48 +430,54 @@ private fun BuildsScreenPreview() {
                     teamId = "acme"
                 ),
                 builds = listOf(
-                    CodemagicBuild(
-                        id = "build-1",
-                        appId = "app-1",
-                        workflowId = "android-release",
-                        branch = "main",
-                        status = BuildStatus.FINISHED,
-                        startedAt = "Today, 14:20",
-                        finishedAt = "Today, 14:32",
-                        triggerer = "agi.maulana",
-                        artifacts = listOf(
-                            BuildArtifact(
-                                id = "artifact-1",
-                                name = "app-release.apk",
-                                sizeBytes = 42_800_000L
-                            ),
-                            BuildArtifact(
-                                id = "artifact-2",
-                                name = "app-arm64-v8a-release.apk",
-                                sizeBytes = 18_400_000L,
-                                downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADING,
-                                downloadProgress = 0.62f,
-                                downloadSizeSoFarBytes = 11_400_000L
+                    BuildsViewModel.BuildListItem(
+                        build = CodemagicBuild(
+                            id = "build-1",
+                            appId = "app-1",
+                            workflowId = "android-release",
+                            branch = "main",
+                            status = BuildStatus.FINISHED,
+                            startedAt = "2026-10-07T14:20:00Z",
+                            finishedAt = "2026-10-07T14:32:00Z",
+                            triggerer = "agi.maulana",
+                            artifacts = listOf(
+                                BuildArtifact(
+                                    id = "artifact-1",
+                                    name = "app-release.apk",
+                                    sizeBytes = 42_800_000L
+                                ),
+                                BuildArtifact(
+                                    id = "artifact-2",
+                                    name = "app-arm64-v8a-release.apk",
+                                    sizeBytes = 18_400_000L,
+                                    downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADING,
+                                    downloadProgress = 0.62f,
+                                    downloadSizeSoFarBytes = 11_400_000L
+                                )
                             )
-                        )
+                        ),
+                        timestamp = BuildsViewModel.BuildTimestamp.Today("14:20")
                     ),
-                    CodemagicBuild(
-                        id = "build-2",
-                        appId = "app-1",
-                        workflowId = "android-debug",
-                        branch = "feature/login-flow",
-                        status = BuildStatus.FINISHED,
-                        startedAt = "Yesterday, 09:05",
-                        finishedAt = "Yesterday, 09:10",
-                        triggerer = "ci-bot",
-                        artifacts = listOf(
-                            BuildArtifact(
-                                id = "artifact-3",
-                                name = "app-debug.apk",
-                                sizeBytes = 24_600_000L,
-                                downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADED
+                    BuildsViewModel.BuildListItem(
+                        build = CodemagicBuild(
+                            id = "build-2",
+                            appId = "app-1",
+                            workflowId = "android-debug",
+                            branch = "feature/login-flow",
+                            status = BuildStatus.FINISHED,
+                            startedAt = "2026-10-06T09:05:00Z",
+                            finishedAt = "2026-10-06T09:10:00Z",
+                            triggerer = "ci-bot",
+                            artifacts = listOf(
+                                BuildArtifact(
+                                    id = "artifact-3",
+                                    name = "app-debug.apk",
+                                    sizeBytes = 24_600_000L,
+                                    downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADED
+                                )
                             )
-                        )
+                        ),
+                        timestamp = BuildsViewModel.BuildTimestamp.Yesterday("09:05")
                     )
                 )
             ),

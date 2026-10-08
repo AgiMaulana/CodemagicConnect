@@ -28,14 +28,27 @@ class BuildsViewModel @Inject constructor(
     private val getBuildsUseCase: GetBuildsUseCase,
     private val downloadArtifactUseCase: DownloadArtifactUseCase,
     private val observeArtifactDownloadsUseCase: ObserveArtifactDownloadsUseCase,
-    private val installArtifactUseCase: InstallArtifactUseCase
+    private val installArtifactUseCase: InstallArtifactUseCase,
+    private val buildTimestampFormatter: BuildTimestampFormatter
 ) : ViewModel() {
 
     private val appId: String = BuildsArgs(savedStateHandle).appId
 
+    data class BuildListItem(
+        val build: CodemagicBuild,
+        val timestamp: BuildTimestamp
+    )
+
+    sealed interface BuildTimestamp {
+        data class Today(val timeText: String) : BuildTimestamp
+        data class Yesterday(val timeText: String) : BuildTimestamp
+        data class OnDate(val dateText: String, val timeText: String) : BuildTimestamp
+        data class Unknown(val rawValue: String) : BuildTimestamp
+    }
+
     data class UiState(
         val app: CodemagicApplication? = null,
-        val builds: List<CodemagicBuild> = emptyList(),
+        val builds: List<BuildListItem> = emptyList(),
         val isLoading: Boolean = false,
         val showDownloadComplete: BuildArtifact? = null
     )
@@ -150,17 +163,19 @@ class BuildsViewModel @Inject constructor(
         ?.artifacts
         ?.firstOrNull { it.id == artifactId }
 
-    private fun mergeDownloads(builds: List<CodemagicBuild>): List<CodemagicBuild> = builds.map { build ->
-        build.copy(
-            artifacts = build.artifacts.map { artifact ->
-                downloadStates[artifact.id]?.let { download ->
-                    artifact.copy(
-                        downloadStatus = download.status,
-                        downloadProgress = download.progress,
-                        downloadSizeSoFarBytes = download.downloadedBytes
-                    )
-                } ?: artifact
-            }
+    private fun mergeDownloads(builds: List<CodemagicBuild>): List<BuildListItem> = builds.map { build ->
+        val mergedArtifacts = build.artifacts.map { artifact ->
+            downloadStates[artifact.id]?.let { download ->
+                artifact.copy(
+                    downloadStatus = download.status,
+                    downloadProgress = download.progress,
+                    downloadSizeSoFarBytes = download.downloadedBytes
+                )
+            } ?: artifact
+        }
+        BuildListItem(
+            build = build.copy(artifacts = mergedArtifacts),
+            timestamp = buildTimestampFormatter.format(build.startedAt)
         )
     }
 
