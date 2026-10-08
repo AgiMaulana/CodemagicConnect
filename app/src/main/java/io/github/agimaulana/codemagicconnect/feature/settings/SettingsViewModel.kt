@@ -63,6 +63,7 @@ class SettingsViewModel @Inject constructor(
     sealed interface NavigationEvent {
         data object NavigateBack : NavigationEvent
         data class NavigateToConnect(val suppressAutoRedirect: Boolean = false) : NavigationEvent
+        data object NavigateToApps : NavigationEvent
     }
 
     private val _uiState = MutableStateFlow(UiState())
@@ -119,6 +120,12 @@ class SettingsViewModel @Inject constructor(
                 clearDownloadedFilesUseCase()
                 _uiEvent.emit(UiEvent.ShowSnackbar(FILES_CLEARED_MESSAGE))
             }
+        }
+    }
+
+    fun onDefaultAppClicked() {
+        viewModelScope.launch {
+            _navigationEvent.emit(NavigationEvent.NavigateToApps)
         }
     }
 

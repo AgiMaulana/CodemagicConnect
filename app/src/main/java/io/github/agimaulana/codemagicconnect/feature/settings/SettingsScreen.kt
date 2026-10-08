@@ -56,6 +56,7 @@ internal fun SettingsScreen(
     onAction: (SettingsViewModel.Action) -> Unit,
     onBackClicked: () -> Unit,
     snackbarHostState: SnackbarHostState,
+    onDefaultAppClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -233,7 +234,7 @@ internal fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { }
+                            .clickable(onClick = onDefaultAppClicked)
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -456,7 +457,8 @@ private fun SettingsScreenPreview() {
             ),
             onAction = {},
             onBackClicked = {},
-            snackbarHostState = remember { SnackbarHostState() }
+            snackbarHostState = remember { SnackbarHostState() },
+            onDefaultAppClicked = {}
         )
     }
 }

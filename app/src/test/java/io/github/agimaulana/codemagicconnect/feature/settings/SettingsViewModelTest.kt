@@ -220,4 +220,19 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { clearDownloadedFilesUseCase() }
     }
+
+    @Test
+    fun `given default app clicked when action then navigation event is emitted`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        viewModel.init()
+
+        viewModel.navigationEvent.test {
+            viewModel.onDefaultAppClicked()
+            assertEquals(
+                SettingsViewModel.NavigationEvent.NavigateToApps,
+                awaitItem()
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
