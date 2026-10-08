@@ -101,6 +101,62 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `given success when test connection then testing flag is cleared and success snackbar shown`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        coEvery { testConnectionUseCase() } returns true
+        viewModel.init()
+
+        viewModel.uiState.test {
+            viewModel.onAction(SettingsViewModel.Action.TestConnection)
+            assertEquals(false, awaitItem().isTestingConnection)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        viewModel.uiEvent.test {
+            viewModel.onAction(SettingsViewModel.Action.TestConnection)
+            assertEquals(
+                SettingsViewModel.UiEvent.ShowSnackbar("Connection successful"),
+                awaitItem()
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `given failure result when test connection then failure snackbar shown`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        coEvery { testConnectionUseCase() } returns false
+        viewModel.init()
+
+        viewModel.uiEvent.test {
+            viewModel.onAction(SettingsViewModel.Action.TestConnection)
+            assertEquals(
+                SettingsViewModel.UiEvent.ShowSnackbar("Connection failed. Check your token."),
+                awaitItem()
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `given error when test connection then failure snackbar shown without crash`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        coEvery { testConnectionUseCase() } throws RuntimeException("network lost")
+        viewModel.init()
+
+        viewModel.uiEvent.test {
+            viewModel.onAction(SettingsViewModel.Action.TestConnection)
+            assertEquals(
+                SettingsViewModel.UiEvent.ShowSnackbar("Connection failed. Check your token."),
+                awaitItem()
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertEquals(false, viewModel.uiState.value.isTestingConnection)
+    }
+
+    @Test
     fun `given toggles when changed then they are persisted`() = runTest {
         every { observeSettingsUseCase() } returns flowOf(settings)
         coEvery { setWifiOnlyUseCase(false) } returns Unit
