@@ -35,10 +35,16 @@ class ArtifactsGatewayImpl @Inject constructor(
 
     override suspend fun install(artifactId: String) {
         val download = downloadDao.get(artifactId)
-            ?: throw IllegalStateException("Artifact $artifactId has not been downloaded yet")
+            ?: error("Artifact $artifactId has not been downloaded yet")
         val path = download.localPath
-            ?: throw IllegalStateException("Artifact $artifactId has no local file")
+            ?: error("Artifact $artifactId has no local file")
         artifactInstaller.install(File(path))
+    }
+
+    override suspend fun deleteDownload(artifactId: String) = withContext(dispatcherProvider.io()) {
+        val download = downloadDao.get(artifactId) ?: return@withContext
+        download.localPath?.let { File(it).delete() }
+        downloadDao.delete(artifactId)
     }
 
     override suspend fun clearDownloadedFiles() = withContext(dispatcherProvider.io()) {
