@@ -1,5 +1,6 @@
 package io.github.agimaulana.codemagicconnect.feature.connect
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,12 +18,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ConnectViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val verifyAndSaveTokenUseCase: VerifyAndSaveTokenUseCase,
     private val isTokenStoredUseCase: IsTokenStoredUseCase,
     private val observeAppPreferencesUseCase: ObserveAppPreferencesUseCase
 ) : ViewModel() {
 
+    private val suppressAutoRedirect: Boolean = ConnectArgs(savedStateHandle).suppressAutoRedirect
+
     data class UiState(
+        val showBackButton: Boolean = false,
         val token: String = "",
         val isLoading: Boolean = false,
         val isCheckingStoredToken: Boolean = false,
@@ -41,6 +46,7 @@ class ConnectViewModel @Inject constructor(
     }
 
     sealed interface NavigationEvent {
+        data object NavigateBack : NavigationEvent
         data object NavigateToApps : NavigationEvent
         data class NavigateToBuilds(val appId: String) : NavigationEvent
         data class OpenBrowser(val url: String) : NavigationEvent
@@ -56,6 +62,10 @@ class ConnectViewModel @Inject constructor(
     val navigationEvent = _navigationEvent.asSharedFlow()
 
     fun init() {
+        if (suppressAutoRedirect) {
+            _uiState.update { it.copy(showBackButton = true, isCheckingStoredToken = false) }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isCheckingStoredToken = true) }
             try {

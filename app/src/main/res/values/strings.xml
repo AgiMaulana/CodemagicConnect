@@ -2,6 +2,7 @@
     <string name="app_name">Codemagic Connect (Unofficial)</string>
 
     <!-- Connect Screen -->
+    <string name="connect_back_content_desc">Cancel token replacement</string>
     <string name="connect_title">Connect your\nCodemagic account</string>
     <string name="connect_subtitle">Paste a personal API token to browse finished builds and install their APKs.</string>
     <string name="connect_api_token_label">API token</string>

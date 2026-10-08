@@ -39,6 +39,7 @@ internal fun ConnectRoute(
     ConnectScreen(
         uiState = uiState,
         onAction = viewModel::onAction,
+        onBackClicked = { onNavigationEvent(ConnectViewModel.NavigationEvent.NavigateBack) },
         modifier = modifier
     )
 }

@@ -178,11 +178,29 @@ class SettingsViewModelTest {
 
         viewModel.navigationEvent.test {
             viewModel.onAction(SettingsViewModel.Action.RemoveTokenAndSignOut)
-            assertEquals(SettingsViewModel.NavigationEvent.NavigateToConnect, awaitItem())
+            assertEquals(
+                SettingsViewModel.NavigationEvent.NavigateToConnect(suppressAutoRedirect = false),
+                awaitItem()
+            )
             cancelAndIgnoreRemainingEvents()
         }
 
         coVerify(exactly = 1) { removeTokenUseCase() }
+    }
+
+    @Test
+    fun `given replace token when action then navigates to connect with suppress auto redirect`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        viewModel.init()
+
+        viewModel.navigationEvent.test {
+            viewModel.onAction(SettingsViewModel.Action.ReplaceToken)
+            assertEquals(
+                SettingsViewModel.NavigationEvent.NavigateToConnect(suppressAutoRedirect = true),
+                awaitItem()
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
