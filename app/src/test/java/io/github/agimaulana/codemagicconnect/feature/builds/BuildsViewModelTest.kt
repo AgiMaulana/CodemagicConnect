@@ -189,4 +189,17 @@ class BuildsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `given app selector clicked when action then navigation event is emitted`() = runTest {
+        stubSources()
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.navigationEvent.test {
+            viewModel.onAppSelectorClicked()
+            assertEquals(BuildsViewModel.NavigationEvent.NavigateToApps, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

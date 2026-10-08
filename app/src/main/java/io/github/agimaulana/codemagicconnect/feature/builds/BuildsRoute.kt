@@ -40,6 +40,7 @@ internal fun BuildsRoute(
         uiState = uiState,
         onAction = viewModel::onAction,
         onSettingsClicked = viewModel::onSettingsClicked,
+        onAppSelectorClicked = viewModel::onAppSelectorClicked,
         modifier = modifier
     )
 

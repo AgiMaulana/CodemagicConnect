@@ -26,6 +26,7 @@
     <string name="builds_title">Builds</string>
     <string name="builds_refresh_content_desc">Refresh</string>
     <string name="builds_settings_content_desc">Settings</string>
+    <string name="builds_app_selector_content_desc">Choose app</string>
     <string name="builds_default_branch">%1$s · Default</string>
     <string name="builds_filter_succeeded">Succeeded</string>
     <string name="builds_filter_all_branches">All branches</string>
