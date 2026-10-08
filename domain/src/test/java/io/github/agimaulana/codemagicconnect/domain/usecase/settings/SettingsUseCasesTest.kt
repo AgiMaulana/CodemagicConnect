@@ -4,12 +4,15 @@ import io.github.agimaulana.codemagicconnect.domain.gateway.ArtifactsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.AuthGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
 import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
+import io.github.agimaulana.codemagicconnect.domain.model.ArtifactDownload
+import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.TokenInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import app.cash.turbine.test
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -29,6 +32,7 @@ class SettingsUseCasesTest {
         every {
             preferencesGateway.observePreferences()
         } returns flowOf(AppPreferences(wifiOnly = false, defaultAppName = "acme", defaultAppId = "1"))
+        every { artifactsGateway.observeDownloads() } returns flowOf(emptyList())
         coEvery { artifactsGateway.downloadedFilesSizeBytes() } returns 2048L
 
         ObserveSettingsUseCaseImpl(authGateway, preferencesGateway, artifactsGateway).invoke().test {
@@ -87,5 +91,29 @@ class SettingsUseCasesTest {
         ClearDownloadedFilesUseCaseImpl(artifactsGateway).invoke()
 
         coVerify(exactly = 1) { artifactsGateway.clearDownloadedFiles() }
+    }
+
+    @Test
+    fun `given downloads change when observe settings then re-emits with fresh size`() = runTest {
+        every { authGateway.observeToken() } returns flowOf(TokenInfo("cm_x", 10L, 20L))
+        every {
+            preferencesGateway.observePreferences()
+        } returns flowOf(AppPreferences(wifiOnly = false, defaultAppName = "acme", defaultAppId = "1"))
+        val downloads = MutableStateFlow<List<ArtifactDownload>>(emptyList())
+        every { artifactsGateway.observeDownloads() } returns downloads
+        coEvery { artifactsGateway.downloadedFilesSizeBytes() } returns 2048L andThen 0L
+
+        ObserveSettingsUseCaseImpl(authGateway, preferencesGateway, artifactsGateway).invoke().test {
+            assertEquals(2048L, awaitItem().downloadedFilesBytes)
+            downloads.value = listOf(
+                ArtifactDownload(
+                    artifactId = "a1",
+                    buildId = "b1",
+                    status = BuildArtifact.DownloadStatus.DOWNLOADED
+                )
+            )
+            assertEquals(0L, awaitItem().downloadedFilesBytes)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }
