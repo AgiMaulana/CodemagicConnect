@@ -49,6 +49,10 @@ class BuildsViewModel @Inject constructor(
     data class UiState(
         val app: CodemagicApplication? = null,
         val builds: List<BuildListItem> = emptyList(),
+        val branches: List<String> = emptyList(),
+        val workflows: List<String> = emptyList(),
+        val selectedBranch: String? = null,
+        val selectedWorkflow: String? = null,
         val isLoading: Boolean = false,
         val showDownloadComplete: BuildArtifact? = null
     )
@@ -58,6 +62,8 @@ class BuildsViewModel @Inject constructor(
         data class RetryDownload(val buildId: String, val artifactId: String) : Action
         data class InstallArtifact(val artifactId: String) : Action
         data class CloseDownloadComplete(val install: Boolean) : Action
+        data class SelectBranch(val branch: String?) : Action
+        data class SelectWorkflow(val workflowId: String?) : Action
         data object Refresh : Action
     }
 
@@ -82,6 +88,8 @@ class BuildsViewModel @Inject constructor(
 
     private var baseBuilds: List<CodemagicBuild> = emptyList()
     private var downloadStates: Map<String, ArtifactDownload> = emptyMap()
+    private var branchFilter: String? = null
+    private var workflowFilter: String? = null
 
     fun init() {
         observeDownloads()
@@ -94,6 +102,8 @@ class BuildsViewModel @Inject constructor(
             is Action.RetryDownload -> download(action.buildId, action.artifactId)
             is Action.InstallArtifact -> install(action.artifactId)
             is Action.CloseDownloadComplete -> closeDownloadComplete(action.install)
+            is Action.SelectBranch -> selectBranch(action.branch)
+            is Action.SelectWorkflow -> selectWorkflow(action.workflowId)
             Action.Refresh -> load()
         }
     }
@@ -116,7 +126,9 @@ class BuildsViewModel @Inject constructor(
             try {
                 val app = getApplicationUseCase(appId)
                 baseBuilds = getBuildsUseCase(appId)
-                _uiState.update { it.copy(app = app, builds = mergeDownloads(baseBuilds), isLoading = false) }
+                _uiState.update {
+                    it.copy(app = app, isLoading = false).withFilteredBuilds()
+                }
             } catch (throwable: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
                 _uiEvent.emit(UiEvent.ShowError(throwable.message ?: FAILED_TO_LOAD_MESSAGE))
@@ -128,9 +140,35 @@ class BuildsViewModel @Inject constructor(
         viewModelScope.launch {
             observeArtifactDownloadsUseCase().collect { downloads ->
                 downloadStates = downloads.associateBy { it.artifactId }
-                _uiState.update { it.copy(builds = mergeDownloads(baseBuilds)) }
+                _uiState.update { it.withFilteredBuilds() }
             }
         }
+    }
+
+    private fun selectBranch(branch: String?) {
+        branchFilter = branch
+        _uiState.update { it.withFilteredBuilds() }
+    }
+
+    private fun selectWorkflow(workflowId: String?) {
+        workflowFilter = workflowId
+        _uiState.update { it.withFilteredBuilds() }
+    }
+
+    private fun UiState.withFilteredBuilds(): UiState {
+        val branches = baseBuilds.map { it.branch }.filter { it.isNotBlank() }.distinct().sorted()
+        val workflows = baseBuilds.map { it.workflowId }.filter { it.isNotBlank() }.distinct().sorted()
+        val filteredBuilds = baseBuilds.filter { build ->
+            (branchFilter == null || build.branch == branchFilter) &&
+                (workflowFilter == null || build.workflowId == workflowFilter)
+        }
+        return copy(
+            builds = mergeDownloads(filteredBuilds),
+            branches = branches,
+            workflows = workflows,
+            selectedBranch = branchFilter,
+            selectedWorkflow = workflowFilter
+        )
     }
 
     private fun download(buildId: String, artifactId: String) {

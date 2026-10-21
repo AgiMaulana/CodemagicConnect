@@ -1,6 +1,7 @@
 package io.github.agimaulana.codemagicconnect.feature.builds
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,6 +28,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -37,7 +41,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -159,7 +166,9 @@ internal fun BuildsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
@@ -172,25 +181,13 @@ internal fun BuildsScreen(
                 ),
                 border = null
             )
-            FilterChip(
-                selected = false,
-                onClick = { },
-                label = { Text(stringResource(R.string.builds_filter_all_branches), fontWeight = FontWeight.SemiBold) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Color.White,
-                    labelColor = Color(0xFF191A1E)
-                ),
-                border = FilterChipDefaults.filterChipBorder(enabled = true, selected = false, borderColor = Color(0xFFE2E8F0))
+            BranchFilterChip(
+                uiState = uiState,
+                onAction = onAction
             )
-            FilterChip(
-                selected = false,
-                onClick = { },
-                label = { Text(stringResource(R.string.builds_filter_workflow), fontWeight = FontWeight.SemiBold) },
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = Color.White,
-                    labelColor = Color(0xFF191A1E)
-                ),
-                border = FilterChipDefaults.filterChipBorder(enabled = true, selected = false, borderColor = Color(0xFFE2E8F0))
+            WorkflowFilterChip(
+                uiState = uiState,
+                onAction = onAction
             )
         }
 
@@ -206,18 +203,144 @@ internal fun BuildsScreen(
                 CircularProgressIndicator()
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
-            ) {
-                items(uiState.builds) { item ->
-                    BuildItem(build = item.build, timestamp = item.timestamp, onAction = onAction)
-                    Spacer(modifier = Modifier.height(16.dp))
+            if (uiState.builds.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.builds_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF5E6573)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(uiState.builds) { item ->
+                        BuildItem(build = item.build, timestamp = item.timestamp, onAction = onAction)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }
     }
     }
 }
+
+@Composable
+private fun BranchFilterChip(
+    uiState: BuildsViewModel.UiState,
+    onAction: (BuildsViewModel.Action) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = uiState.selectedBranch ?: stringResource(R.string.builds_filter_all_branches)
+
+    Box {
+        FilterChip(
+            selected = uiState.selectedBranch != null,
+            onClick = { expanded = true },
+            label = { Text(label, fontWeight = FontWeight.SemiBold) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                )
+            },
+            colors = filterChipColors(),
+            border = filterChipBorder(selected = uiState.selectedBranch != null)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.builds_filter_all_branches)) },
+                onClick = {
+                    onAction(BuildsViewModel.Action.SelectBranch(null))
+                    expanded = false
+                }
+            )
+            uiState.branches.forEach { branch ->
+                DropdownMenuItem(
+                    text = { Text(branch) },
+                    onClick = {
+                        onAction(BuildsViewModel.Action.SelectBranch(branch))
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkflowFilterChip(
+    uiState: BuildsViewModel.UiState,
+    onAction: (BuildsViewModel.Action) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = uiState.selectedWorkflow ?: stringResource(R.string.builds_filter_workflow)
+
+    Box {
+        FilterChip(
+            selected = uiState.selectedWorkflow != null,
+            onClick = { expanded = true },
+            label = { Text(label, fontWeight = FontWeight.SemiBold) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                )
+            },
+            colors = filterChipColors(),
+            border = filterChipBorder(selected = uiState.selectedWorkflow != null)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.builds_filter_all_workflows)) },
+                onClick = {
+                    onAction(BuildsViewModel.Action.SelectWorkflow(null))
+                    expanded = false
+                }
+            )
+            uiState.workflows.forEach { workflow ->
+                DropdownMenuItem(
+                    text = { Text(workflow) },
+                    onClick = {
+                        onAction(BuildsViewModel.Action.SelectWorkflow(workflow))
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun filterChipColors() = FilterChipDefaults.filterChipColors(
+    containerColor = Color.White,
+    labelColor = Color(0xFF191A1E),
+    selectedContainerColor = Color(0xFFE8EEFC),
+    selectedLabelColor = Color(0xFF2E4DF5),
+    selectedTrailingIconColor = Color(0xFF2E4DF5)
+)
+
+@Composable
+private fun filterChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
+    enabled = true,
+    selected = selected,
+    borderColor = Color(0xFFE2E8F0),
+    selectedBorderColor = Color(0xFF2E4DF5)
+)
 
 @Composable
 private fun BuildItem(

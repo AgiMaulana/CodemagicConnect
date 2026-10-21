@@ -32,6 +32,8 @@
     <string name="builds_filter_succeeded">Succeeded</string>
     <string name="builds_filter_all_branches">All branches</string>
     <string name="builds_filter_workflow">Workflow</string>
+    <string name="builds_filter_all_workflows">All workflows</string>
+    <string name="builds_empty">No builds match these filters.</string>
     <string name="builds_status_finished">Finished</string>
     <string name="builds_artifact_downloading">Downloading · %1$s of %2$s MB · %3$d%%</string>
     <string name="builds_artifact_downloaded">Downloaded · %1$s MB</string>

@@ -178,6 +178,124 @@ class BuildsViewModelTest {
     }
 
     @Test
+    fun `given multiple branches when select branch then only that branch builds are shown`() = runTest {
+        stubSources(
+            build.copy(id = "b1", workflowId = "android-release", branch = "main"),
+            build.copy(id = "b2", workflowId = "android-debug", branch = "feature/login")
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.SelectBranch("feature/login"))
+
+        assertEquals("feature/login", viewModel.uiState.value.selectedBranch)
+        assertEquals(listOf("b2"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given builds when init then branch options are distinct and sorted`() = runTest {
+        stubSources(
+            build.copy(id = "b1", branch = "main"),
+            build.copy(id = "b2", branch = "main"),
+            build.copy(id = "b3", branch = "feature/login")
+        )
+        val viewModel = viewModel()
+
+        viewModel.init()
+
+        assertEquals(listOf("feature/login", "main"), viewModel.uiState.value.branches)
+    }
+
+    @Test
+    fun `given build with blank branch when init then blank option is omitted`() = runTest {
+        stubSources(
+            build.copy(id = "b1", branch = ""),
+            build.copy(id = "b2", branch = "   "),
+            build.copy(id = "b3", branch = "main")
+        )
+        val viewModel = viewModel()
+
+        viewModel.init()
+
+        assertEquals(listOf("main"), viewModel.uiState.value.branches)
+    }
+
+    @Test
+    fun `given build with blank workflow when init then blank option is omitted`() = runTest {
+        stubSources(
+            build.copy(id = "b1", workflowId = ""),
+            build.copy(id = "b2", workflowId = "android-release")
+        )
+        val viewModel = viewModel()
+
+        viewModel.init()
+
+        assertEquals(listOf("android-release"), viewModel.uiState.value.workflows)
+    }
+
+    @Test
+    fun `given selected branch when select all branches then every build is shown`() = runTest {
+        stubSources(
+            build.copy(id = "b1", branch = "main"),
+            build.copy(id = "b2", branch = "feature/login")
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.SelectBranch("main"))
+
+        viewModel.onAction(BuildsViewModel.Action.SelectBranch(null))
+
+        assertEquals(null, viewModel.uiState.value.selectedBranch)
+        assertEquals(listOf("b1", "b2"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given multiple workflows when select workflow then only that workflow builds are shown`() = runTest {
+        stubSources(
+            build.copy(id = "b1", workflowId = "android-release", branch = "main"),
+            build.copy(id = "b2", workflowId = "android-debug", branch = "main")
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.SelectWorkflow("android-debug"))
+
+        assertEquals("android-debug", viewModel.uiState.value.selectedWorkflow)
+        assertEquals(listOf("b2"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given builds when init then workflow options are distinct and sorted`() = runTest {
+        stubSources(
+            build.copy(id = "b1", workflowId = "android-release"),
+            build.copy(id = "b2", workflowId = "android-release"),
+            build.copy(id = "b3", workflowId = "ios-release")
+        )
+        val viewModel = viewModel()
+
+        viewModel.init()
+
+        assertEquals(listOf("android-release", "ios-release"), viewModel.uiState.value.workflows)
+    }
+
+    @Test
+    fun `given selected branch when downloads update then filter is preserved`() = runTest {
+        stubSources(
+            build.copy(id = "b1", branch = "main"),
+            build.copy(id = "b2", branch = "feature/login")
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.SelectBranch("feature/login"))
+
+        downloads.emit(
+            listOf(ArtifactDownload("a1", "b2", BuildArtifact.DownloadStatus.DOWNLOADING, progress = 0.5f, downloadedBytes = 24_000_000))
+        )
+
+        assertEquals(listOf("b2"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
     fun `given settings clicked when action then navigation event is emitted`() = runTest {
         stubSources()
         val viewModel = viewModel()
