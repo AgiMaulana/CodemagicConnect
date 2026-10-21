@@ -8,11 +8,14 @@ import io.github.agimaulana.codemagicconnect.domain.model.ArtifactDownload
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicBuild
+import io.github.agimaulana.codemagicconnect.domain.model.isApk
+import io.github.agimaulana.codemagicconnect.domain.model.isCompatibleApk
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.DownloadArtifactUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.GetApplicationUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.GetBuildsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.InstallArtifactUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.ObserveArtifactDownloadsUseCase
+import io.github.agimaulana.codemagicconnect.platform.DeviceAbiProvider
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -29,10 +32,12 @@ class BuildsViewModel @Inject constructor(
     private val downloadArtifactUseCase: DownloadArtifactUseCase,
     private val observeArtifactDownloadsUseCase: ObserveArtifactDownloadsUseCase,
     private val installArtifactUseCase: InstallArtifactUseCase,
-    private val buildTimestampFormatter: BuildTimestampFormatter
+    private val buildTimestampFormatter: BuildTimestampFormatter,
+    deviceAbiProvider: DeviceAbiProvider
 ) : ViewModel() {
 
     private val appId: String = BuildsArgs(savedStateHandle).appId
+    private val deviceAbis: List<String> = deviceAbiProvider.supportedAbis
 
     data class BuildListItem(
         val build: CodemagicBuild,
@@ -46,6 +51,12 @@ class BuildsViewModel @Inject constructor(
         data class Unknown(val rawValue: String) : BuildTimestamp
     }
 
+    enum class ArtifactFilter {
+        ALL,
+        APK_ONLY,
+        COMPATIBLE_APK
+    }
+
     data class UiState(
         val app: CodemagicApplication? = null,
         val builds: List<BuildListItem> = emptyList(),
@@ -53,7 +64,8 @@ class BuildsViewModel @Inject constructor(
         val workflows: List<String> = emptyList(),
         val selectedBranch: String? = null,
         val selectedWorkflow: String? = null,
-        val showApkOnly: Boolean = false,
+        val selectedArtifactFilter: ArtifactFilter = ArtifactFilter.ALL,
+        val supportedAbis: List<String> = emptyList(),
         val isLoading: Boolean = false,
         val showDownloadComplete: BuildArtifact? = null
     )
@@ -65,7 +77,7 @@ class BuildsViewModel @Inject constructor(
         data class CloseDownloadComplete(val install: Boolean) : Action
         data class SelectBranch(val branch: String?) : Action
         data class SelectWorkflow(val workflowId: String?) : Action
-        data object ToggleApkOnly : Action
+        data class SelectArtifactFilter(val filter: ArtifactFilter) : Action
         data object Refresh : Action
     }
 
@@ -79,7 +91,7 @@ class BuildsViewModel @Inject constructor(
         data object NavigateBack : NavigationEvent
     }
 
-    private val _uiState = MutableStateFlow(UiState())
+    private val _uiState = MutableStateFlow(UiState(supportedAbis = deviceAbis))
     val uiState = _uiState.asStateFlow()
 
     private val _uiEvent = MutableSharedFlow<UiEvent>()
@@ -92,7 +104,7 @@ class BuildsViewModel @Inject constructor(
     private var downloadStates: Map<String, ArtifactDownload> = emptyMap()
     private var branchFilter: String? = null
     private var workflowFilter: String? = null
-    private var apkOnlyFilter: Boolean = false
+    private var artifactFilter: ArtifactFilter = ArtifactFilter.ALL
 
     fun init() {
         observeDownloads()
@@ -107,7 +119,7 @@ class BuildsViewModel @Inject constructor(
             is Action.CloseDownloadComplete -> closeDownloadComplete(action.install)
             is Action.SelectBranch -> selectBranch(action.branch)
             is Action.SelectWorkflow -> selectWorkflow(action.workflowId)
-            Action.ToggleApkOnly -> toggleApkOnly()
+            is Action.SelectArtifactFilter -> selectArtifactFilter(action.filter)
             Action.Refresh -> load()
         }
     }
@@ -159,8 +171,8 @@ class BuildsViewModel @Inject constructor(
         _uiState.update { it.withFilteredBuilds() }
     }
 
-    private fun toggleApkOnly() {
-        apkOnlyFilter = !apkOnlyFilter
+    private fun selectArtifactFilter(filter: ArtifactFilter) {
+        artifactFilter = filter
         _uiState.update { it.withFilteredBuilds() }
     }
 
@@ -172,25 +184,24 @@ class BuildsViewModel @Inject constructor(
                 (branchFilter == null || build.branch == branchFilter) &&
                     (workflowFilter == null || build.workflowId == workflowFilter)
             }
-            .map { build ->
-                if (apkOnlyFilter) {
-                    build.copy(artifacts = build.artifacts.filter { it.isApk() })
-                } else {
-                    build
-                }
-            }
-            .filter { !apkOnlyFilter || it.artifacts.isNotEmpty() }
+            .map { build -> build.copy(artifacts = build.artifacts.withArtifactFilter()) }
+            .filter { artifactFilter == ArtifactFilter.ALL || it.artifacts.isNotEmpty() }
         return copy(
             builds = mergeDownloads(filteredBuilds),
             branches = branches,
             workflows = workflows,
             selectedBranch = branchFilter,
             selectedWorkflow = workflowFilter,
-            showApkOnly = apkOnlyFilter
+            selectedArtifactFilter = artifactFilter,
+            supportedAbis = deviceAbis
         )
     }
 
-    private fun BuildArtifact.isApk(): Boolean = name.endsWith(APK_FILE_EXTENSION, ignoreCase = true)
+    private fun List<BuildArtifact>.withArtifactFilter(): List<BuildArtifact> = when (artifactFilter) {
+        ArtifactFilter.ALL -> this
+        ArtifactFilter.APK_ONLY -> filter { it.isApk() }
+        ArtifactFilter.COMPATIBLE_APK -> filter { it.isCompatibleApk(deviceAbis) }
+    }
 
     private fun download(buildId: String, artifactId: String) {
         val artifact = findArtifact(buildId, artifactId) ?: return
@@ -246,7 +257,6 @@ class BuildsViewModel @Inject constructor(
     }
 
     companion object {
-        private const val APK_FILE_EXTENSION = ".apk"
         private const val FAILED_TO_LOAD_MESSAGE = "Could not load builds. Please try again."
         private const val FAILED_TO_DOWNLOAD_MESSAGE = "Download failed. Please try again."
         private const val FAILED_TO_INSTALL_MESSAGE = "Could not start the installer."

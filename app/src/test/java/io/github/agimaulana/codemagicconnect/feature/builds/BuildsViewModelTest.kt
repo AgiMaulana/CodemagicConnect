@@ -13,6 +13,7 @@ import io.github.agimaulana.codemagicconnect.domain.usecase.builds.GetApplicatio
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.GetBuildsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.InstallArtifactUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.builds.ObserveArtifactDownloadsUseCase
+import io.github.agimaulana.codemagicconnect.platform.DeviceAbiProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -42,6 +43,10 @@ class BuildsViewModelTest {
 
     private val downloads = MutableSharedFlow<List<ArtifactDownload>>()
 
+    private val deviceAbiProvider = object : DeviceAbiProvider {
+        override val supportedAbis: List<String> = listOf("arm64-v8a")
+    }
+
     private val app = CodemagicApplication("app-1", "acme", "github.com/acme", null, teamId = "team-9")
     private val artifact = BuildArtifact("a1", "app-release.apk", 48_000_000, downloadUrl = "https://x/app.apk")
     private val build = CodemagicBuild(
@@ -63,7 +68,8 @@ class BuildsViewModelTest {
         downloadArtifactUseCase = downloadArtifactUseCase,
         observeArtifactDownloadsUseCase = observeArtifactDownloadsUseCase,
         installArtifactUseCase = installArtifactUseCase,
-        buildTimestampFormatter = BuildTimestampFormatter()
+        buildTimestampFormatter = BuildTimestampFormatter(),
+        deviceAbiProvider = deviceAbiProvider
     )
 
     private fun stubSources() {
@@ -296,7 +302,7 @@ class BuildsViewModelTest {
     }
 
     @Test
-    fun `given apk only enabled when toggle then only builds with apk artifacts are shown`() = runTest {
+    fun `given apk filter selected when filter changes then only builds with apk artifacts are shown`() = runTest {
         val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
         stubSources(
             build.copy(id = "b1", artifacts = listOf(artifact, aabArtifact)),
@@ -305,15 +311,15 @@ class BuildsViewModelTest {
         val viewModel = viewModel()
         viewModel.init()
 
-        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.APK_ONLY))
 
-        assertTrue(viewModel.uiState.value.showApkOnly)
+        assertEquals(BuildsViewModel.ArtifactFilter.APK_ONLY, viewModel.uiState.value.selectedArtifactFilter)
         assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
         assertEquals(listOf("a1"), viewModel.uiState.value.builds.single().build.artifacts.map { it.id })
     }
 
     @Test
-    fun `given apk only enabled when toggle again then every build is shown`() = runTest {
+    fun `given apk filter selected when all artifacts filter selected then every build is shown`() = runTest {
         val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
         stubSources(
             build.copy(id = "b1", artifacts = listOf(artifact)),
@@ -321,28 +327,28 @@ class BuildsViewModelTest {
         )
         val viewModel = viewModel()
         viewModel.init()
-        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.APK_ONLY))
 
-        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.ALL))
 
-        assertFalse(viewModel.uiState.value.showApkOnly)
+        assertEquals(BuildsViewModel.ArtifactFilter.ALL, viewModel.uiState.value.selectedArtifactFilter)
         assertEquals(listOf("b1", "b2"), viewModel.uiState.value.builds.map { it.build.id })
         assertEquals(listOf("aab1"), viewModel.uiState.value.builds[1].build.artifacts.map { it.id })
     }
 
     @Test
-    fun `given uppercase apk extension when apk only enabled then artifact is shown`() = runTest {
+    fun `given uppercase apk extension when apk filter selected then artifact is shown`() = runTest {
         stubSources(build.copy(artifacts = listOf(artifact.copy(name = "APP-RELEASE.APK"))))
         val viewModel = viewModel()
         viewModel.init()
 
-        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.APK_ONLY))
 
         assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
     }
 
     @Test
-    fun `given apk only enabled when downloads update then filter is preserved`() = runTest {
+    fun `given apk filter selected when downloads update then filter is preserved`() = runTest {
         val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
         stubSources(
             build.copy(id = "b1", artifacts = listOf(artifact)),
@@ -350,10 +356,105 @@ class BuildsViewModelTest {
         )
         val viewModel = viewModel()
         viewModel.init()
-        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.APK_ONLY))
 
         downloads.emit(
             listOf(ArtifactDownload("a1", "b1", BuildArtifact.DownloadStatus.DOWNLOADING, progress = 0.5f, downloadedBytes = 24_000_000))
+        )
+
+        assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given compatible filter selected when filter changes then only apks matching this device are shown`() = runTest {
+        val arm64Apk = BuildArtifact("a64", "app-arm64-v8a-release.apk", 48_000_000)
+        val x86Apk = BuildArtifact("ax86", "app-x86_64-release.apk", 48_000_000)
+        val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
+        stubSources(build.copy(artifacts = listOf(arm64Apk, x86Apk, aabArtifact)))
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        assertEquals(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK, viewModel.uiState.value.selectedArtifactFilter)
+        assertEquals(listOf("a64"), viewModel.uiState.value.builds.single().build.artifacts.map { it.id })
+    }
+
+    @Test
+    fun `given build without compatible apk when compatible filter selected then build is hidden`() = runTest {
+        val arm64Apk = BuildArtifact("a64", "app-arm64-v8a-release.apk", 48_000_000)
+        val x86Apk = BuildArtifact("ax86", "app-x86_64-release.apk", 48_000_000)
+        stubSources(
+            build.copy(id = "b1", artifacts = listOf(arm64Apk)),
+            build.copy(id = "b2", artifacts = listOf(x86Apk))
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given universal apk when compatible filter selected then it is shown`() = runTest {
+        val universalApk = BuildArtifact("auni", "app-release.apk", 48_000_000)
+        stubSources(build.copy(artifacts = listOf(universalApk)))
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        assertEquals(listOf("auni"), viewModel.uiState.value.builds.single().build.artifacts.map { it.id })
+    }
+
+    @Test
+    fun `given compatible filter selected when apk filter selected then incompatible apks are shown`() = runTest {
+        val arm64Apk = BuildArtifact("a64", "app-arm64-v8a-release.apk", 48_000_000)
+        val x86Apk = BuildArtifact("ax86", "app-x86_64-release.apk", 48_000_000)
+        stubSources(build.copy(artifacts = listOf(arm64Apk, x86Apk)))
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.APK_ONLY))
+
+        assertEquals(BuildsViewModel.ArtifactFilter.APK_ONLY, viewModel.uiState.value.selectedArtifactFilter)
+        assertEquals(
+            listOf("a64", "ax86"),
+            viewModel.uiState.value.builds.single().build.artifacts.map { it.id }
+        )
+    }
+
+    @Test
+    fun `given compatible filter selected when all artifacts selected then every artifact is shown`() = runTest {
+        val arm64Apk = BuildArtifact("a64", "app-arm64-v8a-release.apk", 48_000_000)
+        val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
+        stubSources(build.copy(artifacts = listOf(arm64Apk, aabArtifact)))
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.ALL))
+
+        assertEquals(BuildsViewModel.ArtifactFilter.ALL, viewModel.uiState.value.selectedArtifactFilter)
+        assertEquals(
+            listOf("a64", "aab1"),
+            viewModel.uiState.value.builds.single().build.artifacts.map { it.id }
+        )
+    }
+
+    @Test
+    fun `given compatible filter selected when downloads update then filter is preserved`() = runTest {
+        val arm64Apk = BuildArtifact("a64", "app-arm64-v8a-release.apk", 48_000_000)
+        val x86Apk = BuildArtifact("ax86", "app-x86_64-release.apk", 48_000_000)
+        stubSources(build.copy(id = "b1", artifacts = listOf(arm64Apk)), build.copy(id = "b2", artifacts = listOf(x86Apk)))
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.SelectArtifactFilter(BuildsViewModel.ArtifactFilter.COMPATIBLE_APK))
+
+        downloads.emit(
+            listOf(ArtifactDownload("a64", "b1", BuildArtifact.DownloadStatus.DOWNLOADING, progress = 0.5f, downloadedBytes = 24_000_000))
         )
 
         assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })

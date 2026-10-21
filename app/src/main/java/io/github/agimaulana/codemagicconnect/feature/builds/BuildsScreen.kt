@@ -181,6 +181,10 @@ internal fun BuildsScreen(
                 ),
                 border = null
             )
+            ArtifactFilterChip(
+                uiState = uiState,
+                onAction = onAction
+            )
             BranchFilterChip(
                 uiState = uiState,
                 onAction = onAction
@@ -189,12 +193,19 @@ internal fun BuildsScreen(
                 uiState = uiState,
                 onAction = onAction
             )
-            FilterChip(
-                selected = uiState.showApkOnly,
-                onClick = { onAction(BuildsViewModel.Action.ToggleApkOnly) },
-                label = { Text(stringResource(R.string.builds_filter_apk_only), fontWeight = FontWeight.SemiBold) },
-                colors = filterChipColors(),
-                border = filterChipBorder(selected = uiState.showApkOnly)
+        }
+
+        if (uiState.selectedArtifactFilter == BuildsViewModel.ArtifactFilter.COMPATIBLE_APK &&
+            uiState.supportedAbis.isNotEmpty()
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(
+                    R.string.builds_filter_compatible_hint,
+                    uiState.supportedAbis.joinToString(", ")
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF5E6573)
             )
         }
 
@@ -236,6 +247,53 @@ internal fun BuildsScreen(
         }
     }
     }
+}
+
+@Composable
+private fun ArtifactFilterChip(
+    uiState: BuildsViewModel.UiState,
+    onAction: (BuildsViewModel.Action) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = uiState.selectedArtifactFilter != BuildsViewModel.ArtifactFilter.ALL
+
+    Box {
+        FilterChip(
+            selected = selected,
+            onClick = { expanded = true },
+            label = { Text(uiState.selectedArtifactFilter.label(), fontWeight = FontWeight.SemiBold) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                )
+            },
+            colors = filterChipColors(),
+            border = filterChipBorder(selected = selected)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            BuildsViewModel.ArtifactFilter.entries.forEach { filter ->
+                DropdownMenuItem(
+                    text = { Text(filter.label()) },
+                    onClick = {
+                        onAction(BuildsViewModel.Action.SelectArtifactFilter(filter))
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuildsViewModel.ArtifactFilter.label(): String = when (this) {
+    BuildsViewModel.ArtifactFilter.ALL -> stringResource(R.string.builds_filter_all_artifacts)
+    BuildsViewModel.ArtifactFilter.APK_ONLY -> stringResource(R.string.builds_filter_apk_only)
+    BuildsViewModel.ArtifactFilter.COMPATIBLE_APK -> stringResource(R.string.builds_filter_compatible_only)
 }
 
 @Composable
@@ -575,68 +633,7 @@ private fun ArtifactItem(
 private fun BuildsScreenPreview() {
     CodemagicConnectTheme {
         BuildsScreen(
-            uiState = BuildsViewModel.UiState(
-                app = CodemagicApplication(
-                    id = "app-1",
-                    name = "acme-mobile",
-                    repositoryUrl = "github.com/acme/mobile-app",
-                    lastBuildTime = "Last build today, 14:32",
-                    isFavorite = true,
-                    isDefault = true,
-                    teamId = "acme"
-                ),
-                builds = listOf(
-                    BuildsViewModel.BuildListItem(
-                        build = CodemagicBuild(
-                            id = "build-1",
-                            appId = "app-1",
-                            workflowId = "android-release",
-                            branch = "main",
-                            status = BuildStatus.FINISHED,
-                            startedAt = "2026-10-07T14:20:00Z",
-                            finishedAt = "2026-10-07T14:32:00Z",
-                            triggerer = "agi.maulana",
-                            artifacts = listOf(
-                                BuildArtifact(
-                                    id = "artifact-1",
-                                    name = "app-release.apk",
-                                    sizeBytes = 42_800_000L
-                                ),
-                                BuildArtifact(
-                                    id = "artifact-2",
-                                    name = "app-arm64-v8a-release.apk",
-                                    sizeBytes = 18_400_000L,
-                                    downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADING,
-                                    downloadProgress = 0.62f,
-                                    downloadSizeSoFarBytes = 11_400_000L
-                                )
-                            )
-                        ),
-                        timestamp = BuildsViewModel.BuildTimestamp.Today("14:20")
-                    ),
-                    BuildsViewModel.BuildListItem(
-                        build = CodemagicBuild(
-                            id = "build-2",
-                            appId = "app-1",
-                            workflowId = "android-debug",
-                            branch = "feature/login-flow",
-                            status = BuildStatus.FINISHED,
-                            startedAt = "2026-10-06T09:05:00Z",
-                            finishedAt = "2026-10-06T09:10:00Z",
-                            triggerer = "ci-bot",
-                            artifacts = listOf(
-                                BuildArtifact(
-                                    id = "artifact-3",
-                                    name = "app-debug.apk",
-                                    sizeBytes = 24_600_000L,
-                                    downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADED
-                                )
-                            )
-                        ),
-                        timestamp = BuildsViewModel.BuildTimestamp.Yesterday("09:05")
-                    )
-                )
-            ),
+            uiState = previewUiState(),
             snackbarHostState = remember { SnackbarHostState() },
             onAction = {},
             onSettingsClicked = {},
@@ -644,3 +641,84 @@ private fun BuildsScreenPreview() {
         )
     }
 }
+
+@Preview(name = "Compatible APK filter")
+@Composable
+private fun BuildsScreenCompatibleApkPreview() {
+    CodemagicConnectTheme {
+        BuildsScreen(
+            uiState = previewUiState(artifactFilter = BuildsViewModel.ArtifactFilter.COMPATIBLE_APK),
+            snackbarHostState = remember { SnackbarHostState() },
+            onAction = {},
+            onSettingsClicked = {},
+            onAppSelectorClicked = {}
+        )
+    }
+}
+
+private fun previewUiState(
+    artifactFilter: BuildsViewModel.ArtifactFilter = BuildsViewModel.ArtifactFilter.ALL
+): BuildsViewModel.UiState = BuildsViewModel.UiState(
+    app = CodemagicApplication(
+        id = "app-1",
+        name = "acme-mobile",
+        repositoryUrl = "github.com/acme/mobile-app",
+        lastBuildTime = "Last build today, 14:32",
+        isFavorite = true,
+        isDefault = true,
+        teamId = "acme"
+    ),
+    builds = listOf(
+        BuildsViewModel.BuildListItem(
+            build = CodemagicBuild(
+                id = "build-1",
+                appId = "app-1",
+                workflowId = "android-release",
+                branch = "main",
+                status = BuildStatus.FINISHED,
+                startedAt = "2026-10-07T14:20:00Z",
+                finishedAt = "2026-10-07T14:32:00Z",
+                triggerer = "agi.maulana",
+                artifacts = listOf(
+                    BuildArtifact(
+                        id = "artifact-1",
+                        name = "app-release.apk",
+                        sizeBytes = 42_800_000L
+                    ),
+                    BuildArtifact(
+                        id = "artifact-2",
+                        name = "app-arm64-v8a-release.apk",
+                        sizeBytes = 18_400_000L,
+                        downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADING,
+                        downloadProgress = 0.62f,
+                        downloadSizeSoFarBytes = 11_400_000L
+                    )
+                )
+            ),
+            timestamp = BuildsViewModel.BuildTimestamp.Today("14:20")
+        ),
+        BuildsViewModel.BuildListItem(
+            build = CodemagicBuild(
+                id = "build-2",
+                appId = "app-1",
+                workflowId = "android-debug",
+                branch = "feature/login-flow",
+                status = BuildStatus.FINISHED,
+                startedAt = "2026-10-06T09:05:00Z",
+                finishedAt = "2026-10-06T09:10:00Z",
+                triggerer = "ci-bot",
+                artifacts = listOf(
+                    BuildArtifact(
+                        id = "artifact-3",
+                        name = "app-debug.apk",
+                        sizeBytes = 24_600_000L,
+                        downloadStatus = BuildArtifact.DownloadStatus.DOWNLOADED
+                    )
+                )
+            ),
+            timestamp = BuildsViewModel.BuildTimestamp.Yesterday("09:05")
+        )
+    ),
+    selectedArtifactFilter = artifactFilter,
+    supportedAbis = listOf("arm64-v8a", "armeabi-v7a")
+)
