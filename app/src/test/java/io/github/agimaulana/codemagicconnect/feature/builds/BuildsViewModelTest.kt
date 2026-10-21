@@ -296,6 +296,70 @@ class BuildsViewModelTest {
     }
 
     @Test
+    fun `given apk only enabled when toggle then only builds with apk artifacts are shown`() = runTest {
+        val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
+        stubSources(
+            build.copy(id = "b1", artifacts = listOf(artifact, aabArtifact)),
+            build.copy(id = "b2", artifacts = listOf(aabArtifact))
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+
+        assertTrue(viewModel.uiState.value.showApkOnly)
+        assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
+        assertEquals(listOf("a1"), viewModel.uiState.value.builds.single().build.artifacts.map { it.id })
+    }
+
+    @Test
+    fun `given apk only enabled when toggle again then every build is shown`() = runTest {
+        val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
+        stubSources(
+            build.copy(id = "b1", artifacts = listOf(artifact)),
+            build.copy(id = "b2", artifacts = listOf(aabArtifact))
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+
+        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+
+        assertFalse(viewModel.uiState.value.showApkOnly)
+        assertEquals(listOf("b1", "b2"), viewModel.uiState.value.builds.map { it.build.id })
+        assertEquals(listOf("aab1"), viewModel.uiState.value.builds[1].build.artifacts.map { it.id })
+    }
+
+    @Test
+    fun `given uppercase apk extension when apk only enabled then artifact is shown`() = runTest {
+        stubSources(build.copy(artifacts = listOf(artifact.copy(name = "APP-RELEASE.APK"))))
+        val viewModel = viewModel()
+        viewModel.init()
+
+        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+
+        assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
+    fun `given apk only enabled when downloads update then filter is preserved`() = runTest {
+        val aabArtifact = BuildArtifact("aab1", "app-release.aab", 30_000_000)
+        stubSources(
+            build.copy(id = "b1", artifacts = listOf(artifact)),
+            build.copy(id = "b2", artifacts = listOf(aabArtifact))
+        )
+        val viewModel = viewModel()
+        viewModel.init()
+        viewModel.onAction(BuildsViewModel.Action.ToggleApkOnly)
+
+        downloads.emit(
+            listOf(ArtifactDownload("a1", "b1", BuildArtifact.DownloadStatus.DOWNLOADING, progress = 0.5f, downloadedBytes = 24_000_000))
+        )
+
+        assertEquals(listOf("b1"), viewModel.uiState.value.builds.map { it.build.id })
+    }
+
+    @Test
     fun `given settings clicked when action then navigation event is emitted`() = runTest {
         stubSources()
         val viewModel = viewModel()

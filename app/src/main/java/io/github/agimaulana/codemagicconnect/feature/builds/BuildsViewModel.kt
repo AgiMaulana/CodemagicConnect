@@ -53,6 +53,7 @@ class BuildsViewModel @Inject constructor(
         val workflows: List<String> = emptyList(),
         val selectedBranch: String? = null,
         val selectedWorkflow: String? = null,
+        val showApkOnly: Boolean = false,
         val isLoading: Boolean = false,
         val showDownloadComplete: BuildArtifact? = null
     )
@@ -64,6 +65,7 @@ class BuildsViewModel @Inject constructor(
         data class CloseDownloadComplete(val install: Boolean) : Action
         data class SelectBranch(val branch: String?) : Action
         data class SelectWorkflow(val workflowId: String?) : Action
+        data object ToggleApkOnly : Action
         data object Refresh : Action
     }
 
@@ -90,6 +92,7 @@ class BuildsViewModel @Inject constructor(
     private var downloadStates: Map<String, ArtifactDownload> = emptyMap()
     private var branchFilter: String? = null
     private var workflowFilter: String? = null
+    private var apkOnlyFilter: Boolean = false
 
     fun init() {
         observeDownloads()
@@ -104,6 +107,7 @@ class BuildsViewModel @Inject constructor(
             is Action.CloseDownloadComplete -> closeDownloadComplete(action.install)
             is Action.SelectBranch -> selectBranch(action.branch)
             is Action.SelectWorkflow -> selectWorkflow(action.workflowId)
+            Action.ToggleApkOnly -> toggleApkOnly()
             Action.Refresh -> load()
         }
     }
@@ -155,21 +159,38 @@ class BuildsViewModel @Inject constructor(
         _uiState.update { it.withFilteredBuilds() }
     }
 
+    private fun toggleApkOnly() {
+        apkOnlyFilter = !apkOnlyFilter
+        _uiState.update { it.withFilteredBuilds() }
+    }
+
     private fun UiState.withFilteredBuilds(): UiState {
         val branches = baseBuilds.map { it.branch }.filter { it.isNotBlank() }.distinct().sorted()
         val workflows = baseBuilds.map { it.workflowId }.filter { it.isNotBlank() }.distinct().sorted()
-        val filteredBuilds = baseBuilds.filter { build ->
-            (branchFilter == null || build.branch == branchFilter) &&
-                (workflowFilter == null || build.workflowId == workflowFilter)
-        }
+        val filteredBuilds = baseBuilds
+            .filter { build ->
+                (branchFilter == null || build.branch == branchFilter) &&
+                    (workflowFilter == null || build.workflowId == workflowFilter)
+            }
+            .map { build ->
+                if (apkOnlyFilter) {
+                    build.copy(artifacts = build.artifacts.filter { it.isApk() })
+                } else {
+                    build
+                }
+            }
+            .filter { !apkOnlyFilter || it.artifacts.isNotEmpty() }
         return copy(
             builds = mergeDownloads(filteredBuilds),
             branches = branches,
             workflows = workflows,
             selectedBranch = branchFilter,
-            selectedWorkflow = workflowFilter
+            selectedWorkflow = workflowFilter,
+            showApkOnly = apkOnlyFilter
         )
     }
+
+    private fun BuildArtifact.isApk(): Boolean = name.endsWith(APK_FILE_EXTENSION, ignoreCase = true)
 
     private fun download(buildId: String, artifactId: String) {
         val artifact = findArtifact(buildId, artifactId) ?: return
@@ -225,6 +246,7 @@ class BuildsViewModel @Inject constructor(
     }
 
     companion object {
+        private const val APK_FILE_EXTENSION = ".apk"
         private const val FAILED_TO_LOAD_MESSAGE = "Could not load builds. Please try again."
         private const val FAILED_TO_DOWNLOAD_MESSAGE = "Download failed. Please try again."
         private const val FAILED_TO_INSTALL_MESSAGE = "Could not start the installer."

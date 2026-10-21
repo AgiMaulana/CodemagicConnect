@@ -189,6 +189,13 @@ internal fun BuildsScreen(
                 uiState = uiState,
                 onAction = onAction
             )
+            FilterChip(
+                selected = uiState.showApkOnly,
+                onClick = { onAction(BuildsViewModel.Action.ToggleApkOnly) },
+                label = { Text(stringResource(R.string.builds_filter_apk_only), fontWeight = FontWeight.SemiBold) },
+                colors = filterChipColors(),
+                border = filterChipBorder(selected = uiState.showApkOnly)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
