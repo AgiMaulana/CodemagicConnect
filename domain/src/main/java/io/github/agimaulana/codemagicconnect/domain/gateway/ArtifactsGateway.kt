@@ -12,6 +12,8 @@ interface ArtifactsGateway {
 
     suspend fun install(artifactId: String)
 
+    suspend fun deleteDownload(artifactId: String)
+
     suspend fun clearDownloadedFiles()
 
     suspend fun downloadedFilesSizeBytes(): Long
