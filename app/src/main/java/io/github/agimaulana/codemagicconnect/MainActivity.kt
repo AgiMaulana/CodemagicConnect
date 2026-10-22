@@ -26,6 +26,7 @@ import io.github.agimaulana.codemagicconnect.feature.connect.navigateToConnect
 import io.github.agimaulana.codemagicconnect.feature.settings.SettingsViewModel
 import io.github.agimaulana.codemagicconnect.feature.settings.navigateToSettings
 import io.github.agimaulana.codemagicconnect.feature.settings.settingsScreen
+import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicConnectTheme
 
 @AndroidEntryPoint
@@ -36,7 +37,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             CodemagicConnectTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = CodemagicColors.current.background
+                ) { innerPadding ->
                     NavHost(
                         navController = navController,
                         startDestination = CONNECT_ROUTE // TODO: logic to select start destination

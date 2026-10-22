@@ -26,12 +26,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
+import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,9 +41,10 @@ internal fun DownloadCompleteBottomSheet(
     onInstall: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = CodemagicColors.current
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = colors.surface,
         sheetState = rememberModalBottomSheetState(
             skipPartiallyExpanded = true
         ),
@@ -60,13 +61,13 @@ internal fun DownloadCompleteBottomSheet(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFE6F4EA)),
+                        .background(colors.successContainer),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF137333)
+                        tint = colors.onSuccessContainer
                     )
                 }
                 
@@ -77,12 +78,12 @@ internal fun DownloadCompleteBottomSheet(
                         text = stringResource(R.string.bottom_sheet_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF191A1E)
+                        color = colors.onSurface
                     )
                     Text(
                         text = stringResource(R.string.bottom_sheet_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5E6573)
+                        color = colors.onSurfaceVariant
                     )
                 }
             }
@@ -92,7 +93,7 @@ internal fun DownloadCompleteBottomSheet(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFF5F6F8), RoundedCornerShape(12.dp))
+                    .background(colors.surfaceVariant, RoundedCornerShape(12.dp))
                     .padding(16.dp)
             ) {
                 Column {
@@ -100,28 +101,28 @@ internal fun DownloadCompleteBottomSheet(
                         text = artifact.name,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF191A1E)
+                        color = colors.onSurface
                     )
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.bottom_sheet_size_label), style = MaterialTheme.typography.bodyMedium, color = Color(0xFF5E6573), modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.builds_size_mb, (artifact.sizeBytes / 1000000.0).toString()), style = MaterialTheme.typography.bodyMedium, color = Color(0xFF191A1E))
+                        Text(stringResource(R.string.bottom_sheet_size_label), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.builds_size_mb, (artifact.sizeBytes / 1000000.0).toString()), style = MaterialTheme.typography.bodyMedium, color = colors.onSurface)
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.bottom_sheet_workflow_label), style = MaterialTheme.typography.bodyMedium, color = Color(0xFF5E6573), modifier = Modifier.weight(1f))
-                        Text("android-debug", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF191A1E), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                        Text(stringResource(R.string.bottom_sheet_workflow_label), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text("android-debug", style = MaterialTheme.typography.bodyMedium, color = colors.onSurface, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.bottom_sheet_branch_label), style = MaterialTheme.typography.bodyMedium, color = Color(0xFF5E6573), modifier = Modifier.weight(1f))
-                        Text("feature/login-flow", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF191A1E), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
+                        Text(stringResource(R.string.bottom_sheet_branch_label), style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        Text("feature/login-flow", style = MaterialTheme.typography.bodyMedium, color = colors.onSurface, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)
                     }
                 }
             }
@@ -131,7 +132,7 @@ internal fun DownloadCompleteBottomSheet(
             Text(
                 text = stringResource(R.string.bottom_sheet_install_notice),
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF5E6573)
+                color = colors.onSurfaceVariant
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -142,7 +143,10 @@ internal fun DownloadCompleteBottomSheet(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E4DF5))
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.primary,
+                    contentColor = colors.onPrimary
+                )
             ) {
                 Text(stringResource(R.string.bottom_sheet_install_button), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
@@ -153,7 +157,7 @@ internal fun DownloadCompleteBottomSheet(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(stringResource(R.string.bottom_sheet_dismiss_button), color = Color(0xFF5E6573), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.bottom_sheet_dismiss_button), color = colors.onSurfaceVariant, style = MaterialTheme.typography.titleMedium)
             }
             
             Spacer(modifier = Modifier.height(24.dp))

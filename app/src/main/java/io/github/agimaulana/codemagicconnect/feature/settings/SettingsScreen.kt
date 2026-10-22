@@ -42,12 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
+import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicConnectTheme
 
 @Composable
@@ -59,15 +61,16 @@ internal fun SettingsScreen(
     onDefaultAppClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = CodemagicColors.current
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        containerColor = Color(0xFFF5F6F8)
+        containerColor = colors.background
     ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F6F8))
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(innerPadding)
     ) {
@@ -80,13 +83,13 @@ internal fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClicked) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back_content_desc), tint = Color(0xFF191A1E))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back_content_desc), tint = colors.onSurface)
             }
             Text(
                 text = stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF191A1E)
+                color = colors.onSurface
             )
         }
 
@@ -96,7 +99,7 @@ internal fun SettingsScreen(
             text = stringResource(R.string.settings_section_account),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF5E6573),
+            color = colors.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -106,7 +109,7 @@ internal fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = colors.surface),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column {
@@ -120,18 +123,18 @@ internal fun SettingsScreen(
                             text = stringResource(R.string.settings_api_token_label),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                         Box(
                             modifier = Modifier
-                                .background(Color(0xFFE6F4EA), RoundedCornerShape(4.dp))
+                                .background(colors.successContainer, RoundedCornerShape(4.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.settings_status_connected),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF137333)
+                                color = colors.onSuccessContainer
                             )
                         }
                     }
@@ -141,14 +144,14 @@ internal fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFF5F6F8), RoundedCornerShape(8.dp))
+                            .background(colors.surfaceVariant, RoundedCornerShape(8.dp))
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
                             text = uiState.tokenObfuscated,
                             style = MaterialTheme.typography.bodyLarge,
                             fontFamily = FontFamily.Monospace,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                     }
 
@@ -161,17 +164,17 @@ internal fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_token_added, uiState.tokenAddedDate),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                         Text(
                             text = uiState.tokenVerifiedDate,
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                     }
                 }
 
-                HorizontalDivider(color = Color(0xFFF5F6F8))
+                HorizontalDivider(color = colors.divider)
 
                 ActionItem(
                     icon = Icons.Default.Refresh,
@@ -181,21 +184,21 @@ internal fun SettingsScreen(
                     isLoading = uiState.isTestingConnection
                 )
 
-                HorizontalDivider(color = Color(0xFFF5F6F8))
+                HorizontalDivider(color = colors.divider)
 
                 ActionItem(
                     icon = Icons.Default.Edit,
                     text = stringResource(R.string.settings_action_replace_token),
-                    tint = Color(0xFF2E4DF5),
+                    tint = colors.primary,
                     onClick = { onAction(SettingsViewModel.Action.ReplaceToken) }
                 )
 
-                HorizontalDivider(color = Color(0xFFF5F6F8))
+                HorizontalDivider(color = colors.divider)
 
                 ActionItem(
                     icon = Icons.Default.Delete,
                     text = stringResource(R.string.settings_action_remove_token),
-                    tint = Color(0xFFC5221F),
+                    tint = colors.error,
                     onClick = { onAction(SettingsViewModel.Action.RemoveTokenAndSignOut) }
                 )
             }
@@ -206,7 +209,7 @@ internal fun SettingsScreen(
         Text(
             text = stringResource(R.string.settings_token_disclaimer),
             style = MaterialTheme.typography.bodySmall,
-            color = Color(0xFF5E6573),
+            color = colors.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -216,7 +219,7 @@ internal fun SettingsScreen(
             text = stringResource(R.string.settings_section_app),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF5E6573),
+            color = colors.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -226,7 +229,7 @@ internal fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = colors.surface),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column {
@@ -242,14 +245,14 @@ internal fun SettingsScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFE8EEFC)),
+                                .background(colors.primaryContainer),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = uiState.defaultAppName.first().uppercase(),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF2E4DF5)
+                                color = colors.onPrimaryContainer
                             )
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -258,17 +261,17 @@ internal fun SettingsScreen(
                                 text = stringResource(R.string.settings_default_app_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF191A1E)
+                                color = colors.onSurface
                             )
                             Text(
                                 text = stringResource(R.string.settings_default_app_subtitle, uiState.defaultAppName),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF5E6573)
+                                color = colors.onSurfaceVariant
                             )
                         }
-                        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color(0xFF5E6573))
+                        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = colors.onSurfaceVariant)
                     }
-                    HorizontalDivider(color = Color(0xFFF5F6F8))
+                    HorizontalDivider(color = colors.divider)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -280,7 +283,7 @@ internal fun SettingsScreen(
                             text = stringResource(R.string.settings_clear_default_app),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                     }
                 } else {
@@ -294,7 +297,7 @@ internal fun SettingsScreen(
                             text = stringResource(R.string.settings_no_default_app),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                     }
                 }
@@ -307,7 +310,7 @@ internal fun SettingsScreen(
             text = stringResource(R.string.settings_section_downloads),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF5E6573),
+            color = colors.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -317,7 +320,7 @@ internal fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = colors.surface),
             shape = RoundedCornerShape(16.dp)
         ) {
             Column {
@@ -332,22 +335,22 @@ internal fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_wifi_only_title),
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                         Text(
                             text = stringResource(R.string.settings_wifi_only_subtitle),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                     }
                     Switch(
                         checked = uiState.isWifiOnly,
                         onCheckedChange = { onAction(SettingsViewModel.Action.ToggleWifiOnly(it)) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF2E4DF5))
+                        colors = SwitchDefaults.colors(checkedTrackColor = colors.primary)
                     )
                 }
 
-                HorizontalDivider(color = Color(0xFFF5F6F8))
+                HorizontalDivider(color = colors.divider)
 
                 Row(
                     modifier = Modifier
@@ -360,22 +363,22 @@ internal fun SettingsScreen(
                         Text(
                             text = stringResource(R.string.settings_delete_apk_title),
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                         Text(
                             text = stringResource(R.string.settings_delete_apk_subtitle),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                     }
                     Switch(
                         checked = uiState.isDeleteApkAfterInstall,
                         onCheckedChange = { onAction(SettingsViewModel.Action.ToggleDeleteApkAfterInstall(it)) },
-                        colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF2E4DF5))
+                        colors = SwitchDefaults.colors(checkedTrackColor = colors.primary)
                     )
                 }
 
-                HorizontalDivider(color = Color(0xFFF5F6F8))
+                HorizontalDivider(color = colors.divider)
 
                 Row(
                     modifier = Modifier
@@ -389,12 +392,12 @@ internal fun SettingsScreen(
                         text = stringResource(R.string.settings_clear_downloads_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF191A1E)
+                        color = colors.onSurface
                     )
                     Text(
                         text = uiState.downloadedFilesSize,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5E6573)
+                        color = colors.onSurfaceVariant
                     )
                 }
             }
@@ -409,11 +412,13 @@ internal fun SettingsScreen(
 private fun ActionItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
-    tint: Color = Color(0xFF191A1E),
+    tint: Color = Color.Unspecified,
     onClick: () -> Unit,
     enabled: Boolean = true,
     isLoading: Boolean = false
 ) {
+    val colors = CodemagicColors.current
+    val actionTint = if (tint.isSpecified) tint else colors.onSurface
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -421,20 +426,20 @@ private fun ActionItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = tint)
+        Icon(imageVector = icon, contentDescription = null, tint = actionTint)
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = tint,
+            color = actionTint,
             modifier = Modifier.weight(1f)
         )
         if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier.size(24.dp),
                 strokeWidth = 2.dp,
-                color = tint
+                color = actionTint
             )
         }
     }

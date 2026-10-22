@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Matches CodemagicConnectColors.background in light mode so the native splash blends into the first frame. -->
+    <color name="splash_screen_background">#FFF5F6F8</color>
 </resources>

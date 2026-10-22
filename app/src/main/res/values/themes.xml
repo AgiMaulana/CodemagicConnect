@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.CodemagicConnectUnofficial" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.CodemagicConnectUnofficial" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Pre-API 31 the launch window is drawn from windowBackground. -->
+        <item name="android:windowBackground">@color/splash_screen_background</item>
+    </style>
 </resources>

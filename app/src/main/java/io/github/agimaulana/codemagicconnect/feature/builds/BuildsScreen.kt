@@ -48,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,6 +58,7 @@ import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
 import io.github.agimaulana.codemagicconnect.domain.model.BuildStatus
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicBuild
+import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicConnectTheme
 
 @Composable
@@ -70,10 +70,11 @@ internal fun BuildsScreen(
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
+    val colors = CodemagicColors.current
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF5F6F8)
+        containerColor = colors.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -92,21 +93,21 @@ internal fun BuildsScreen(
                 text = stringResource(R.string.builds_title),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF191A1E)
+                color = colors.onSurface
             )
             Row {
                 IconButton(onClick = { onAction(BuildsViewModel.Action.Refresh) }) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = stringResource(R.string.builds_refresh_content_desc),
-                        tint = Color(0xFF191A1E)
+                        tint = colors.onSurface
                     )
                 }
                 IconButton(onClick = onSettingsClicked) {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = stringResource(R.string.builds_settings_content_desc),
-                        tint = Color(0xFF191A1E)
+                        tint = colors.onSurface
                     )
                 }
             }
@@ -117,7 +118,7 @@ internal fun BuildsScreen(
         if (uiState.app != null) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
                 shape = RoundedCornerShape(12.dp),
                 onClick = onAppSelectorClicked
             ) {
@@ -129,14 +130,14 @@ internal fun BuildsScreen(
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFE8EEFC)),
+                            .background(colors.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = uiState.app.name.first().uppercase(),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF2E4DF5)
+                            color = colors.onPrimaryContainer
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -145,18 +146,18 @@ internal fun BuildsScreen(
                             text = uiState.app.name,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF191A1E)
+                            color = colors.onSurface
                         )
                         Text(
                             text = stringResource(R.string.builds_default_branch, uiState.app.repositoryUrl),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                     }
                     IconButton(onClick = onAppSelectorClicked) {Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = stringResource(R.string.builds_app_selector_content_desc),
-                        tint = Color(0xFF5E6573)
+                        tint = colors.onSurfaceVariant
                     )
                     }
                 }
@@ -176,8 +177,8 @@ internal fun BuildsScreen(
                 onClick = { },
                 label = { Text(stringResource(R.string.builds_filter_succeeded), fontWeight = FontWeight.SemiBold) },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(0xFF2E4DF5),
-                    selectedLabelColor = Color.White
+                    selectedContainerColor = colors.primary,
+                    selectedLabelColor = colors.onPrimary
                 ),
                 border = null
             )
@@ -205,7 +206,7 @@ internal fun BuildsScreen(
                     uiState.supportedAbis.joinToString(", ")
                 ),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF5E6573)
+                color = colors.onSurfaceVariant
             )
         }
 
@@ -231,7 +232,7 @@ internal fun BuildsScreen(
                     Text(
                         text = stringResource(R.string.builds_empty),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5E6573)
+                        color = colors.onSurfaceVariant
                     )
                 }
             } else {
@@ -392,19 +393,19 @@ private fun WorkflowFilterChip(
 
 @Composable
 private fun filterChipColors() = FilterChipDefaults.filterChipColors(
-    containerColor = Color.White,
-    labelColor = Color(0xFF191A1E),
-    selectedContainerColor = Color(0xFFE8EEFC),
-    selectedLabelColor = Color(0xFF2E4DF5),
-    selectedTrailingIconColor = Color(0xFF2E4DF5)
+    containerColor = CodemagicColors.current.surface,
+    labelColor = CodemagicColors.current.onSurface,
+    selectedContainerColor = CodemagicColors.current.primaryContainer,
+    selectedLabelColor = CodemagicColors.current.onPrimaryContainer,
+    selectedTrailingIconColor = CodemagicColors.current.primary
 )
 
 @Composable
 private fun filterChipBorder(selected: Boolean) = FilterChipDefaults.filterChipBorder(
     enabled = true,
     selected = selected,
-    borderColor = Color(0xFFE2E8F0),
-    selectedBorderColor = Color(0xFF2E4DF5)
+    borderColor = CodemagicColors.current.border,
+    selectedBorderColor = CodemagicColors.current.primary
 )
 
 @Composable
@@ -413,9 +414,10 @@ private fun BuildItem(
     timestamp: BuildsViewModel.BuildTimestamp,
     onAction: (BuildsViewModel.Action) -> Unit
 ) {
+    val colors = CodemagicColors.current
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -428,18 +430,18 @@ private fun BuildItem(
                     text = build.workflowId,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF191A1E)
+                    color = colors.onSurface
                 )
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFE6F4EA), RoundedCornerShape(4.dp))
+                        .background(colors.successContainer, RoundedCornerShape(4.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.builds_status_finished),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF137333)
+                        color = colors.onSuccessContainer
                     )
                 }
             }
@@ -453,14 +455,14 @@ private fun BuildItem(
                 Box(
                     modifier = Modifier
                         .weight(1f, fill = false)
-                        .background(Color(0xFFF1F3F4), RoundedCornerShape(4.dp))
+                        .background(colors.neutralContainer, RoundedCornerShape(4.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = build.branch,
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                        color = Color(0xFF191A1E),
+                        color = colors.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -472,7 +474,7 @@ private fun BuildItem(
                         triggerer = build.triggerer
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF5E6573),
+                    color = colors.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -519,10 +521,11 @@ private fun ArtifactItem(
     artifact: BuildArtifact,
     onAction: (BuildsViewModel.Action) -> Unit
 ) {
+    val colors = CodemagicColors.current
     val bgColor = when (artifact.downloadStatus) {
-        BuildArtifact.DownloadStatus.FAILED -> Color(0xFFFCE8E6)
-        BuildArtifact.DownloadStatus.DOWNLOADING -> Color(0xFFF8F9FA)
-        else -> Color(0xFFF8F9FA)
+        BuildArtifact.DownloadStatus.FAILED -> colors.errorContainer
+        BuildArtifact.DownloadStatus.DOWNLOADING -> colors.surfaceVariant
+        else -> colors.surfaceVariant
     }
 
     Box(
@@ -541,7 +544,7 @@ private fun ArtifactItem(
                     text = artifact.name,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF191A1E)
+                    color = colors.onSurface
                 )
                 
                 when (artifact.downloadStatus) {
@@ -549,7 +552,7 @@ private fun ArtifactItem(
                         Text(
                             text = stringResource(R.string.builds_size_mb, (artifact.sizeBytes / 1000000.0).toString()),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                     }
                     BuildArtifact.DownloadStatus.DOWNLOADING -> {
@@ -561,28 +564,28 @@ private fun ArtifactItem(
                                 (artifact.downloadProgress * 100).toInt()
                             ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF5E6573)
+                            color = colors.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         LinearProgressIndicator(
                             progress = { artifact.downloadProgress },
                             modifier = Modifier.fillMaxWidth().height(4.dp),
-                            color = Color(0xFF2E4DF5),
-                            trackColor = Color(0xFFE2E8F0)
+                            color = colors.primary,
+                            trackColor = colors.border
                         )
                     }
                     BuildArtifact.DownloadStatus.DOWNLOADED -> {
                         Text(
                             text = stringResource(R.string.builds_artifact_downloaded, (artifact.sizeBytes / 1000000.0).toString()),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF137333)
+                            color = colors.success
                         )
                     }
                     BuildArtifact.DownloadStatus.FAILED -> {
                         Text(
                             text = stringResource(R.string.builds_artifact_failed),
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFFC5221F)
+                            color = colors.error
                         )
                     }
                 }
@@ -594,7 +597,10 @@ private fun ArtifactItem(
                 BuildArtifact.DownloadStatus.NOT_DOWNLOADED -> {
                     Button(
                         onClick = { onAction(BuildsViewModel.Action.DownloadArtifact(build.id, artifact.id)) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E4DF5)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary
+                        ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(stringResource(R.string.builds_button_download), fontWeight = FontWeight.Bold)
@@ -602,13 +608,16 @@ private fun ArtifactItem(
                 }
                 BuildArtifact.DownloadStatus.DOWNLOADING -> {
                     IconButton(onClick = { /* cancel */ }) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.builds_button_cancel_content_desc), tint = Color(0xFF5E6573))
+                        Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.builds_button_cancel_content_desc), tint = colors.onSurfaceVariant)
                     }
                 }
                 BuildArtifact.DownloadStatus.DOWNLOADED -> {
                     Button(
                         onClick = { onAction(BuildsViewModel.Action.InstallArtifact(artifact.id)) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF137333)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.success,
+                            contentColor = colors.onSuccess
+                        ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(stringResource(R.string.builds_button_install), fontWeight = FontWeight.Bold)
@@ -617,10 +626,13 @@ private fun ArtifactItem(
                 BuildArtifact.DownloadStatus.FAILED -> {
                     Button(
                         onClick = { onAction(BuildsViewModel.Action.RetryDownload(build.id, artifact.id)) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC5221F)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colors.error,
+                            contentColor = colors.onError
+                        ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text(stringResource(R.string.builds_button_retry), fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(stringResource(R.string.builds_button_retry), fontWeight = FontWeight.Bold)
                     }
                 }
             }

@@ -46,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
 import io.github.agimaulana.codemagicconnect.domain.model.CodemagicApplication
+import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicConnectTheme
 
 @Composable
@@ -54,10 +55,11 @@ internal fun AppsScreen(
     onAction: (AppsViewModel.Action) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = CodemagicColors.current
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F6F8))
+            .background(colors.background)
             .systemBarsPadding()
             .padding(horizontal = 24.dp)
     ) {
@@ -67,7 +69,7 @@ internal fun AppsScreen(
             text = stringResource(R.string.apps_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF191A1E)
+            color = colors.onSurface
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -75,7 +77,7 @@ internal fun AppsScreen(
         Text(
             text = stringResource(R.string.apps_subtitle),
             style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFF5E6573)
+            color = colors.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -86,13 +88,15 @@ internal fun AppsScreen(
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(stringResource(R.string.apps_search_placeholder)) },
             leadingIcon = {
-                Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = Color(0xFF5E6573))
+                Icon(imageVector = Icons.Default.Search, contentDescription = null, tint = colors.onSurfaceVariant)
             },
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
+                focusedContainerColor = colors.surface,
+                unfocusedContainerColor = colors.surface,
+                focusedTextColor = colors.onSurface,
+                unfocusedTextColor = colors.onSurface,
                 focusedBorderColor = Color.Transparent,
                 unfocusedBorderColor = Color.Transparent
             )
@@ -128,7 +132,7 @@ internal fun AppsScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F6F8))
+                .background(colors.background)
                 .padding(vertical = 16.dp)
         ) {
             Column {
@@ -140,13 +144,13 @@ internal fun AppsScreen(
                         checked = uiState.openAppAutomatically,
                         onCheckedChange = { onAction(AppsViewModel.Action.ToggleOpenAutomatically(it)) },
                         colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFF2E4DF5)
+                            checkedColor = colors.primary
                         )
                     )
                     Text(
                         text = stringResource(R.string.apps_open_automatically_checkbox_label, uiState.apps.firstOrNull { it.isDefault }?.name ?: "the app"),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF191A1E)
+                        color = colors.onSurface
                     )
                 }
 
@@ -160,7 +164,8 @@ internal fun AppsScreen(
                     shape = RoundedCornerShape(12.dp),
                     enabled = uiState.apps.any { it.isDefault },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2E4DF5)
+                        containerColor = colors.primary,
+                        contentColor = colors.onPrimary
                     )
                 ) {
                     Text(
@@ -181,16 +186,17 @@ private fun AppItem(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
+    val colors = CodemagicColors.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) Color(0xFF2E4DF5) else Color.Transparent,
+                color = if (isSelected) colors.primary else Color.Transparent,
                 shape = RoundedCornerShape(16.dp)
             ),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = colors.surface),
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(
@@ -203,14 +209,14 @@ private fun AppItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE8EEFC)),
+                    .background(colors.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = app.name.first().uppercase(),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E4DF5)
+                    color = colors.onPrimaryContainer
                 )
             }
             
@@ -221,17 +227,17 @@ private fun AppItem(
                     text = app.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF191A1E)
+                    color = colors.onSurface
                 )
                 Text(
                     text = app.repositoryUrl,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF5E6573)
+                    color = colors.onSurfaceVariant
                 )
                 Text(
                     text = app.lastBuildTime ?: stringResource(R.string.apps_no_builds_yet),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF5E6573)
+                    color = colors.onSurfaceVariant
                 )
             }
 
@@ -239,7 +245,7 @@ private fun AppItem(
                 Icon(
                     imageVector = if (app.isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
                     contentDescription = stringResource(R.string.apps_favorite_content_desc),
-                    tint = if (app.isFavorite) Color(0xFFF2B005) else Color(0xFF5E6573)
+                    tint = if (app.isFavorite) colors.warning else colors.onSurfaceVariant
                 )
             }
         }

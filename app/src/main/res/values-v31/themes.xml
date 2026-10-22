@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.CodemagicConnectUnofficial" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Pre-API 31 the launch window is drawn from windowBackground. -->
+        <item name="android:windowBackground">@color/splash_screen_background</item>
+        <!-- API 31+ reports the splash screen separately from the launch window. -->
+        <item name="android:windowSplashScreenBackground">@color/splash_screen_background</item>
+    </style>
+</resources>

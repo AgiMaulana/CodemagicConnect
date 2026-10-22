@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches CodemagicConnectColors.background in dark mode so the native splash blends into the first frame. -->
+    <color name="splash_screen_background">#FF0F1116</color>
+</resources>
