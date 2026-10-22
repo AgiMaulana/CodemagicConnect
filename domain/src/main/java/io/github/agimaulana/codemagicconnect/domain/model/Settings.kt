@@ -9,5 +9,6 @@ data class Settings(
     val defaultAppName: String?,
     val wifiOnly: Boolean,
     val deleteApkAfterInstall: Boolean,
+    val themeMode: ThemeMode,
     val downloadedFilesBytes: Long
 )

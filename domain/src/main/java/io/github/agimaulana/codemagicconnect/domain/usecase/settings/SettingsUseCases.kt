@@ -4,9 +4,11 @@ import io.github.agimaulana.codemagicconnect.domain.gateway.ArtifactsGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.AuthGateway
 import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
 import io.github.agimaulana.codemagicconnect.domain.model.Settings
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 interface ObserveSettingsUseCase {
@@ -33,6 +35,14 @@ interface SetDeleteApkAfterInstallUseCase {
     suspend operator fun invoke(enabled: Boolean)
 }
 
+interface ObserveThemeModeUseCase {
+    operator fun invoke(): Flow<ThemeMode>
+}
+
+interface SetThemeModeUseCase {
+    suspend operator fun invoke(mode: ThemeMode)
+}
+
 interface ClearDownloadedFilesUseCase {
     suspend operator fun invoke()
 }
@@ -57,6 +67,7 @@ internal class ObserveSettingsUseCaseImpl @Inject constructor(
             defaultAppName = preferences.defaultAppName,
             wifiOnly = preferences.wifiOnly,
             deleteApkAfterInstall = preferences.deleteApkAfterInstall,
+            themeMode = preferences.themeMode,
             downloadedFilesBytes = artifactsGateway.downloadedFilesSizeBytes()
         )
     }
@@ -105,6 +116,23 @@ internal class SetDeleteApkAfterInstallUseCaseImpl @Inject constructor(
 
     override suspend fun invoke(enabled: Boolean) {
         preferencesGateway.setDeleteApkAfterInstall(enabled)
+    }
+}
+
+internal class ObserveThemeModeUseCaseImpl @Inject constructor(
+    private val preferencesGateway: PreferencesGateway
+) : ObserveThemeModeUseCase {
+
+    override fun invoke(): Flow<ThemeMode> =
+        preferencesGateway.observePreferences().map { it.themeMode }
+}
+
+internal class SetThemeModeUseCaseImpl @Inject constructor(
+    private val preferencesGateway: PreferencesGateway
+) : SetThemeModeUseCase {
+
+    override suspend fun invoke(mode: ThemeMode) {
+        preferencesGateway.setThemeMode(mode)
     }
 }
 

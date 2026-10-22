@@ -8,7 +8,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -36,7 +40,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
-            CodemagicConnectTheme {
+            val mainViewModel: MainViewModel = hiltViewModel()
+            val themeMode by mainViewModel.themeMode.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { mainViewModel.init() }
+            CodemagicConnectTheme(themeMode = themeMode) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = CodemagicColors.current.background

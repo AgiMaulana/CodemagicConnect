@@ -72,6 +72,11 @@
     <string name="settings_action_replace_token">Replace token</string>
     <string name="settings_action_remove_token">Remove token &amp; sign out</string>
     <string name="settings_token_disclaimer">The token is kept in Android Keystore and is never shown in full. Revoking it in Codemagic also stops this app from loading builds.</string>
+    <string name="settings_section_appearance">APPEARANCE</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
     <string name="settings_section_app">APP</string>
     <string name="settings_default_app_title">Default app</string>
     <string name="settings_default_app_subtitle">%1$s · opens builds on launch</string>

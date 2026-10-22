@@ -11,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -36,11 +37,12 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun CodemagicConnectTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = themeMode.toDarkTheme(isSystemInDarkTheme())
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -60,4 +62,10 @@ fun CodemagicConnectTheme(
             content = content
         )
     }
+}
+
+internal fun ThemeMode.toDarkTheme(systemInDarkTheme: Boolean): Boolean = when (this) {
+    ThemeMode.SYSTEM -> systemInDarkTheme
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
 }

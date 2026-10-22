@@ -20,12 +20,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,18 +45,23 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.agimaulana.codemagicconnect.R
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicColors
 import io.github.agimaulana.codemagicconnect.ui.theme.CodemagicConnectTheme
 
@@ -212,6 +225,31 @@ internal fun SettingsScreen(
             color = colors.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = stringResource(R.string.settings_section_appearance),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = colors.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            colors = CardDefaults.cardColors(containerColor = colors.surface),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            ThemeSelector(
+                themeMode = uiState.themeMode,
+                onThemeModeSelected = { onAction(SettingsViewModel.Action.SelectThemeMode(it)) }
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -407,6 +445,95 @@ internal fun SettingsScreen(
     }
     }
 }
+
+@Composable
+private fun ThemeSelector(
+    themeMode: ThemeMode,
+    onThemeModeSelected: (ThemeMode) -> Unit
+) {
+    val colors = CodemagicColors.current
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { isMenuExpanded = true }
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Palette,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = stringResource(R.string.settings_theme_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = colors.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = stringResource(themeMode.labelResource),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant
+            )
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant
+            )
+        }
+        DropdownMenu(
+            expanded = isMenuExpanded,
+            onDismissRequest = { isMenuExpanded = false },
+            containerColor = colors.surface
+        ) {
+            ThemeMode.entries.forEach { mode ->
+                DropdownMenuItem(
+                    text = {
+                        Text(text = stringResource(mode.labelResource), color = colors.onSurface)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = mode.icon,
+                            contentDescription = null,
+                            tint = if (mode == themeMode) colors.primary else colors.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        if (mode == themeMode) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = colors.primary
+                            )
+                        }
+                    },
+                    onClick = {
+                        isMenuExpanded = false
+                        onThemeModeSelected(mode)
+                    }
+                )
+            }
+        }
+    }
+}
+
+private val ThemeMode.labelResource: Int
+    get() = when (this) {
+        ThemeMode.SYSTEM -> R.string.settings_theme_system
+        ThemeMode.LIGHT -> R.string.settings_theme_light
+        ThemeMode.DARK -> R.string.settings_theme_dark
+    }
+
+private val ThemeMode.icon: ImageVector
+    get() = when (this) {
+        ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+        ThemeMode.LIGHT -> Icons.Default.LightMode
+        ThemeMode.DARK -> Icons.Default.DarkMode
+    }
 
 @Composable
 private fun ActionItem(

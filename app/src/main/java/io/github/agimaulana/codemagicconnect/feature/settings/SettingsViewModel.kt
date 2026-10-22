@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.agimaulana.codemagicconnect.domain.model.Settings
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDefaultApplicationUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDownloadedFilesUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveSettingsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.RemoveTokenUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetDeleteApkAfterInstallUseCase
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetThemeModeUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetWifiOnlyUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.TestConnectionUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,6 +33,7 @@ class SettingsViewModel @Inject constructor(
     private val clearDefaultApplicationUseCase: ClearDefaultApplicationUseCase,
     private val setWifiOnlyUseCase: SetWifiOnlyUseCase,
     private val setDeleteApkAfterInstallUseCase: SetDeleteApkAfterInstallUseCase,
+    private val setThemeModeUseCase: SetThemeModeUseCase,
     private val clearDownloadedFilesUseCase: ClearDownloadedFilesUseCase
 ) : ViewModel() {
 
@@ -42,6 +45,7 @@ class SettingsViewModel @Inject constructor(
         val defaultAppName: String? = "acme-mobile",
         val isWifiOnly: Boolean = true,
         val isDeleteApkAfterInstall: Boolean = false,
+        val themeMode: ThemeMode = ThemeMode.SYSTEM,
         val downloadedFilesSize: String = "214 MB",
         val isTestingConnection: Boolean = false
     )
@@ -53,6 +57,7 @@ class SettingsViewModel @Inject constructor(
         data object ClearDefaultApp : Action
         data class ToggleWifiOnly(val isEnabled: Boolean) : Action
         data class ToggleDeleteApkAfterInstall(val isEnabled: Boolean) : Action
+        data class SelectThemeMode(val themeMode: ThemeMode) : Action
         data object ClearDownloadedFiles : Action
     }
 
@@ -116,6 +121,9 @@ class SettingsViewModel @Inject constructor(
             is Action.ToggleDeleteApkAfterInstall -> viewModelScope.launch {
                 setDeleteApkAfterInstallUseCase(action.isEnabled)
             }
+            is Action.SelectThemeMode -> viewModelScope.launch {
+                setThemeModeUseCase(action.themeMode)
+            }
             Action.ClearDownloadedFiles -> viewModelScope.launch {
                 clearDownloadedFilesUseCase()
                 _uiEvent.emit(UiEvent.ShowSnackbar(FILES_CLEARED_MESSAGE))
@@ -137,6 +145,7 @@ class SettingsViewModel @Inject constructor(
         defaultAppName = defaultAppName,
         isWifiOnly = wifiOnly,
         isDeleteApkAfterInstall = deleteApkAfterInstall,
+        themeMode = themeMode,
         downloadedFilesSize = formatBytes(downloadedFilesBytes)
     )
 

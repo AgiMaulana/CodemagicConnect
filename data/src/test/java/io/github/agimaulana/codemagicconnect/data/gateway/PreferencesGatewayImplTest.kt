@@ -5,6 +5,7 @@ import io.github.agimaulana.codemagicconnect.data.local.dao.FavoriteDao
 import io.github.agimaulana.codemagicconnect.data.local.dao.PreferenceDao
 import io.github.agimaulana.codemagicconnect.data.local.entity.FavoriteEntity
 import io.github.agimaulana.codemagicconnect.data.local.entity.PreferenceEntity
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -40,6 +41,37 @@ class PreferencesGatewayImplTest {
             assertFalse(preferences.openAppAutomatically)
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `given stored theme mode when observed then maps theme mode`() = runTest {
+        every { preferenceDao.observeAll() } returns flowOf(
+            listOf(PreferenceEntity("theme_mode", "DARK"))
+        )
+
+        gateway.observePreferences().test {
+            assertEquals(ThemeMode.DARK, awaitItem().themeMode)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `given no stored theme mode when observed then follows system`() = runTest {
+        every { preferenceDao.observeAll() } returns flowOf(emptyList())
+
+        gateway.observePreferences().test {
+            assertEquals(ThemeMode.SYSTEM, awaitItem().themeMode)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `given theme mode when set then it is persisted`() = runTest {
+        coEvery { preferenceDao.upsert(any()) } returns Unit
+
+        gateway.setThemeMode(ThemeMode.LIGHT)
+
+        coVerify(exactly = 1) { preferenceDao.upsert(PreferenceEntity("theme_mode", "LIGHT")) }
     }
 
     @Test

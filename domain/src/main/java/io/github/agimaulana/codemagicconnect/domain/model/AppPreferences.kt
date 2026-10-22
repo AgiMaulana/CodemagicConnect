@@ -5,5 +5,6 @@ data class AppPreferences(
     val wifiOnly: Boolean = true,
     val deleteApkAfterInstall: Boolean = false,
     val defaultAppId: String? = null,
-    val defaultAppName: String? = null
+    val defaultAppName: String? = null,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )

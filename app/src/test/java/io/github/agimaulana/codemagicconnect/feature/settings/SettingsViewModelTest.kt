@@ -3,11 +3,13 @@ package io.github.agimaulana.codemagicconnect.feature.settings
 import app.cash.turbine.test
 import io.github.agimaulana.codemagicconnect.core.testing.CoroutineMainDispatcherRule
 import io.github.agimaulana.codemagicconnect.domain.model.Settings
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDefaultApplicationUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDownloadedFilesUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveSettingsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.RemoveTokenUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetDeleteApkAfterInstallUseCase
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetThemeModeUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetWifiOnlyUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.TestConnectionUseCase
 import io.mockk.coEvery
@@ -32,6 +34,7 @@ class SettingsViewModelTest {
     private val clearDefaultApplicationUseCase = mockk<ClearDefaultApplicationUseCase>()
     private val setWifiOnlyUseCase = mockk<SetWifiOnlyUseCase>()
     private val setDeleteApkAfterInstallUseCase = mockk<SetDeleteApkAfterInstallUseCase>()
+    private val setThemeModeUseCase = mockk<SetThemeModeUseCase>()
     private val clearDownloadedFilesUseCase = mockk<ClearDownloadedFilesUseCase>()
 
     private val viewModel = SettingsViewModel(
@@ -41,6 +44,7 @@ class SettingsViewModelTest {
         clearDefaultApplicationUseCase = clearDefaultApplicationUseCase,
         setWifiOnlyUseCase = setWifiOnlyUseCase,
         setDeleteApkAfterInstallUseCase = setDeleteApkAfterInstallUseCase,
+        setThemeModeUseCase = setThemeModeUseCase,
         clearDownloadedFilesUseCase = clearDownloadedFilesUseCase
     )
 
@@ -53,6 +57,7 @@ class SettingsViewModelTest {
         defaultAppName = "acme-mobile",
         wifiOnly = false,
         deleteApkAfterInstall = true,
+        themeMode = ThemeMode.DARK,
         downloadedFilesBytes = 214L * 1024L * 1024L
     )
 
@@ -69,6 +74,7 @@ class SettingsViewModelTest {
         assertEquals("acme-mobile", state.defaultAppName)
         assertEquals(false, state.isWifiOnly)
         assertEquals(true, state.isDeleteApkAfterInstall)
+        assertEquals(ThemeMode.DARK, state.themeMode)
         assertEquals("214 MB", state.downloadedFilesSize)
     }
 
@@ -168,6 +174,17 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { setWifiOnlyUseCase(false) }
         coVerify(exactly = 1) { setDeleteApkAfterInstallUseCase(true) }
+    }
+
+    @Test
+    fun `given theme selection when action then theme mode is persisted`() = runTest {
+        every { observeSettingsUseCase() } returns flowOf(settings)
+        coEvery { setThemeModeUseCase(ThemeMode.LIGHT) } returns Unit
+        viewModel.init()
+
+        viewModel.onAction(SettingsViewModel.Action.SelectThemeMode(ThemeMode.LIGHT))
+
+        coVerify(exactly = 1) { setThemeModeUseCase(ThemeMode.LIGHT) }
     }
 
     @Test

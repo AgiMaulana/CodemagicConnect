@@ -38,10 +38,14 @@ import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDownlo
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ClearDownloadedFilesUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveSettingsUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveSettingsUseCaseImpl
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveThemeModeUseCase
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.ObserveThemeModeUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.RemoveTokenUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.RemoveTokenUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetDeleteApkAfterInstallUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetDeleteApkAfterInstallUseCaseImpl
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetThemeModeUseCase
+import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetThemeModeUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetWifiOnlyUseCase
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.SetWifiOnlyUseCaseImpl
 import io.github.agimaulana.codemagicconnect.domain.usecase.settings.TestConnectionUseCase
@@ -149,6 +153,16 @@ internal abstract class UseCaseModule {
     internal abstract fun bindSetDeleteApkAfterInstallUseCase(
         impl: SetDeleteApkAfterInstallUseCaseImpl
     ): SetDeleteApkAfterInstallUseCase
+
+    @Binds
+    @Singleton
+    internal abstract fun bindObserveThemeModeUseCase(
+        impl: ObserveThemeModeUseCaseImpl
+    ): ObserveThemeModeUseCase
+
+    @Binds
+    @Singleton
+    internal abstract fun bindSetThemeModeUseCase(impl: SetThemeModeUseCaseImpl): SetThemeModeUseCase
 
     @Binds
     @Singleton

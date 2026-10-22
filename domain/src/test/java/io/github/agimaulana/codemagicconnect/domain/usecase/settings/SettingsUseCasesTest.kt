@@ -6,6 +6,7 @@ import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
 import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
 import io.github.agimaulana.codemagicconnect.domain.model.ArtifactDownload
 import io.github.agimaulana.codemagicconnect.domain.model.BuildArtifact
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import io.github.agimaulana.codemagicconnect.domain.model.TokenInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -45,6 +46,38 @@ class SettingsUseCasesTest {
             assertEquals(2048L, settings.downloadedFilesBytes)
             awaitComplete()
         }
+    }
+
+    @Test
+    fun `given stored theme mode when observe settings then theme mode is mapped`() = runTest {
+        every { authGateway.observeToken() } returns flowOf(null)
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(themeMode = ThemeMode.DARK))
+        every { artifactsGateway.observeDownloads() } returns flowOf(emptyList())
+        coEvery { artifactsGateway.downloadedFilesSizeBytes() } returns 0L
+
+        ObserveSettingsUseCaseImpl(authGateway, preferencesGateway, artifactsGateway).invoke().test {
+            assertEquals(ThemeMode.DARK, awaitItem().themeMode)
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `given stored theme mode when observe theme mode then emits theme mode`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(themeMode = ThemeMode.LIGHT))
+
+        ObserveThemeModeUseCaseImpl(preferencesGateway).invoke().test {
+            assertEquals(ThemeMode.LIGHT, awaitItem())
+            awaitComplete()
+        }
+    }
+
+    @Test
+    fun `given theme mode when set then delegates to preferences`() = runTest {
+        coEvery { preferencesGateway.setThemeMode(ThemeMode.LIGHT) } returns Unit
+
+        SetThemeModeUseCaseImpl(preferencesGateway).invoke(ThemeMode.LIGHT)
+
+        coVerify(exactly = 1) { preferencesGateway.setThemeMode(ThemeMode.LIGHT) }
     }
 
     @Test

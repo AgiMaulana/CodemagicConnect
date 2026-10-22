@@ -6,6 +6,7 @@ import io.github.agimaulana.codemagicconnect.data.local.entity.FavoriteEntity
 import io.github.agimaulana.codemagicconnect.data.local.entity.PreferenceEntity
 import io.github.agimaulana.codemagicconnect.domain.gateway.PreferencesGateway
 import io.github.agimaulana.codemagicconnect.domain.model.AppPreferences
+import io.github.agimaulana.codemagicconnect.domain.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -24,7 +25,8 @@ class PreferencesGatewayImpl @Inject constructor(
             wifiOnly = values[KEY_WIFI_ONLY]?.toBoolean() ?: true,
             deleteApkAfterInstall = values[KEY_DELETE_APK_AFTER_INSTALL]?.toBoolean() ?: false,
             defaultAppId = values[KEY_DEFAULT_APP_ID],
-            defaultAppName = values[KEY_DEFAULT_APP_NAME]
+            defaultAppName = values[KEY_DEFAULT_APP_NAME],
+            themeMode = values[KEY_THEME_MODE].toThemeMode()
         )
     }
 
@@ -41,6 +43,10 @@ class PreferencesGatewayImpl @Inject constructor(
 
     override suspend fun setDeleteApkAfterInstall(enabled: Boolean) {
         putBoolean(KEY_DELETE_APK_AFTER_INSTALL, enabled)
+    }
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        preferenceDao.upsert(PreferenceEntity(KEY_THEME_MODE, mode.name))
     }
 
     override suspend fun setDefaultApplication(id: String, name: String) {
@@ -65,11 +71,15 @@ class PreferencesGatewayImpl @Inject constructor(
         preferenceDao.upsert(PreferenceEntity(key, value.toString()))
     }
 
+    private fun String?.toThemeMode(): ThemeMode =
+        ThemeMode.entries.firstOrNull { it.name.equals(this, ignoreCase = true) } ?: ThemeMode.SYSTEM
+
     companion object {
         private const val KEY_OPEN_APP_AUTOMATICALLY = "open_app_automatically"
         private const val KEY_WIFI_ONLY = "wifi_only"
         private const val KEY_DELETE_APK_AFTER_INSTALL = "delete_apk_after_install"
         private const val KEY_DEFAULT_APP_ID = "default_app_id"
         private const val KEY_DEFAULT_APP_NAME = "default_app_name"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 }
