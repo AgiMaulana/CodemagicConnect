@@ -19,6 +19,9 @@ interface DownloadDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: DownloadEntity)
 
+    @Query("DELETE FROM download WHERE artifactId = :artifactId")
+    suspend fun delete(artifactId: String)
+
     @Query("DELETE FROM download")
     suspend fun deleteAll()
 }

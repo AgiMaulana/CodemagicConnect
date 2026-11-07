@@ -14,6 +14,7 @@ import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyDownloadPolic
 import io.github.agimaulana.codemagicconnect.domain.policy.WifiOnlyThreshold
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -133,11 +134,35 @@ class BuildsUseCasesTest {
 
     @Test
     fun `given artifact id when install then delegates to artifacts gateway`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = false))
         coEvery { artifactsGateway.install("a1") } returns Unit
 
-        InstallArtifactUseCaseImpl(artifactsGateway).invoke("a1")
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
 
         coVerify(exactly = 1) { artifactsGateway.install("a1") }
+    }
+
+    @Test
+    fun `given delete apk enabled when install then apk file is deleted after installer runs`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = true))
+        coEvery { artifactsGateway.install("a1") } returns Unit
+        coEvery { artifactsGateway.deleteDownload("a1") } returns Unit
+
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
+
+        coVerify(exactly = 1) { artifactsGateway.install("a1") }
+        coVerify(exactly = 1) { artifactsGateway.deleteDownload("a1") }
+    }
+
+    @Test
+    fun `given delete apk disabled when install then apk file is kept`() = runTest {
+        every { preferencesGateway.observePreferences() } returns flowOf(AppPreferences(deleteApkAfterInstall = false))
+        coEvery { artifactsGateway.install("a1") } returns Unit
+
+        InstallArtifactUseCaseImpl(artifactsGateway, preferencesGateway).invoke("a1")
+
+        coVerify(exactly = 1) { artifactsGateway.install("a1") }
+        coVerify(exactly = 0) { artifactsGateway.deleteDownload(any()) }
     }
 
     private fun downloadUseCase() = DownloadArtifactUseCaseImpl(
